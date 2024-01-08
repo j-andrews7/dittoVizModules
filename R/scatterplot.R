@@ -1,65 +1,3 @@
-library(shiny)
-library(plotly)
-library(colourpicker)
-library(shinydashboard)
-
-
-#' Function to organize inputs into a grid layout
-#' @param tag_list A tagList containing UI inputs or a named list 
-#'   containing multiple tagLists containing UI inputs.
-#' @param tack An optional UI input to tack onto the end of the grid.
-#' @param columns Number of columns.
-#' @param rows Number of rows.
-#'
-#' @return A Shiny tagList with inputs organized into a grid, optionally
-#'   nested inside a tabsetPanel.
-#'
-#' @importFrom shiny fluidRow column tagList tabsetPanel tabPanel
-#' @export
-#' @author Jared Andrews
-organize_inputs <- function(tag_list, tack = NULL, columns = NULL, rows = NULL) {
-  # Check if tag_list is a list of named lists
-  if (!is(tag_list, "shiny.tag.list")) {
-
-    # Create a tabsetPanel with a tabPanel for each list element
-    out <- do.call(tabsetPanel, c(
-      lapply(names(tag_list), function(tab_name) {
-        tabPanel(
-          tab_name,
-          do.call(tagList, organize_inputs(tag_list[[tab_name]], columns = columns, rows = rows))
-        )
-      }))
-    )
-
-  } else {
-    n_tags <- length(tag_list)
-    
-    # Calculate missing dimension based on the provided one and total tags
-    if (is.null(columns) & !is.null(rows)) {
-      columns <- ceiling(n_tags / rows)
-    } else if (is.null(rows) & !is.null(columns)) {
-      rows <- ceiling(n_tags / columns)
-    } else if (is.null(rows) & is.null(columns)) {
-      stop("Either rows or columns must be provided.")
-    }
-    
-    out <- lapply(seq_len(rows), function(r) {
-      do.call(fluidRow, lapply(seq_len(columns), function(c) {
-        idx <- (r - 1) * columns + c
-        if (idx <= n_tags) {
-          column(width = 12 / columns, tag_list[[idx]])
-        }
-      }))
-    })
-  }
-
-  if (!is.null(tack)) {
-    out <- tagList(out, tack)
-  }
-
-  out
-}
-
 ###### Plot Generation ######
 
 #' Generate a single scatterplot using Plotly
@@ -68,7 +6,7 @@ organize_inputs <- function(tag_list, tack = NULL, columns = NULL, rows = NULL) 
 #' 
 #' @return A Plotly scatterplot object
 #'
-#' @importFrom plotly plot_ly add_trace %>% layout
+#' @importFrom plotly plot_ly add_trace %>% layout add_text
 #' @author Jared Andrews
 #' @examples
 #' data <- data.frame(x = rnorm(100), y = rnorm(100), color = rnorm(100), shape = factor(rep(1:2, 50)))
@@ -263,13 +201,16 @@ make_scatterplot <- function(data,
 #' Input UI components for the scatterplot module
 #' @param id The ID for the Shiny module.
 #' @param data The data frame used for plot generation.
+#' @param title An optional title for the UI grid.
 #' @param columns Number of columns for the UI grid.
 #' @return A Shiny tagList containing the UI elements
 #'
-#' @importFrom shiny tagList NS selectInput numericInput actionButton
+#' @importFrom shiny tagList NS selectInput numericInput sliderInput 
+#'   checkboxInput textInput actionButton br
+#' @importFrom colourpicker colourInput
 #' @export
 #' @author Jared Andrews
-scatterplotInputsUI <- function(id, data, columns = 2) {
+scatterplotInputsUI <- function(id, data, title = NULL, columns = 2) {
   ns <- NS(id)
   choices <- c("", names(data))
   inputs <- list(
@@ -298,15 +239,18 @@ scatterplotInputsUI <- function(id, data, columns = 2) {
     )
   )
   
-  organize_inputs(inputs, tack = actionButton(ns("update"), "Update Plot"), columns = columns)
+  organize_inputs(inputs, title = title, tack = tagList(actionButton(ns("update"), "Update Plot"), br()), columns = columns)
 }
 
 
 #' Output UI components for the scatterplot module
 #' @param id The ID for the Shiny module
+#' 
 #' @return A Shiny plotlyOutput for the scatterplot
+#' 
 #' @importFrom shiny NS
 #' @importFrom plotly plotlyOutput
+#' 
 #' @export
 #' @author Jared Andrews
 scatterplotOutputUI <- function(id) {
@@ -320,8 +264,10 @@ scatterplotOutputUI <- function(id) {
 #' Server logic for scatterplot module
 #' @param id The ID for the Shiny module
 #' @param data The data frame to plot
+#' 
 #' @importFrom shiny moduleServer isolate
 #' @importFrom plotly renderPlotly
+#' 
 #' @export
 #' @author Jared Andrews
 scatterplotServer <- function(id, data) {
@@ -363,9 +309,7 @@ scatterplotServer <- function(id, data) {
 #'
 #' @param data_list A named list of data frames for which scatterplot modules will be created.
 #'
-#' @import shiny
-#' @import shinydashboard
-#' @import shinyjs
+#' @importFrom shiny fluidPage titlePanel sidebarLayout sidebarPanel mainPanel shinyApp h3
 #' @export
 #'
 #' @examples
@@ -382,15 +326,13 @@ createScatterplotApp <- function(data_list) {
     sidebarLayout(
       sidebarPanel(
         lapply(names(data_list), function(name) {
-          scatterplotInputsUI(name, data_list[[name]])
-        }),
-        hr()
+          scatterplotInputsUI(name, data_list[[name]], title = h3(paste0(name, " Settings")))
+        })
       ),
       mainPanel(
         lapply(names(data_list), function(name) {
           scatterplotOutputUI(name)
-        }),
-        hr()
+        })
       )
     )
   )
@@ -405,4 +347,3 @@ createScatterplotApp <- function(data_list) {
   # Return the Shiny app
   shinyApp(ui, server)
 }
-
