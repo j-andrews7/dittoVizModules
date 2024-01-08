@@ -11,6 +11,10 @@ Description: ShinyBaseModules offers a core selection of Shiny modules for commo
     for full plot aesthetic customization by the end user through UI inputs. Utility
     functions for simple UI organization are also provided.
 License: MIT + file LICENSE
+Imports:
+    shiny,
+    colourpicker,
+    plotly
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
