@@ -356,25 +356,53 @@ scatterplotServer <- function(id, data) {
 
 ###### Example App ######
 
-ui <- fluidPage(
-  titlePanel("Modular Scatterplots"),
-  sidebarLayout(
-    sidebarPanel(
-      scatterplotInputsUI("scatter1", mtcars),
-      hr(),
-      scatterplotInputsUI("scatter2", iris)
-    ),
-    mainPanel(
-      scatterplotOutputUI("scatter1"),
-      hr(),
-      scatterplotOutputUI("scatter2")
+#' Create a Modular Scatterplot Shiny Application
+#'
+#' This function generates a Shiny application with modular scatterplot components.
+#' Each module is created for each data frame provided in the named list of data frames.
+#'
+#' @param data_list A named list of data frames for which scatterplot modules will be created.
+#'
+#' @import shiny
+#' @import shinydashboard
+#' @import shinyjs
+#' @export
+#'
+#' @examples
+#' data_list <- list(mtcars = mtcars, iris = iris)
+#' app <- createScatterplotApp(data_list)
+#' runApp(app)
+createScatterplotApp <- function(data_list) {
+  # Validate input
+  stopifnot(is.list(data_list), all(sapply(data_list, is.data.frame)))
+
+  # UI definition
+  ui <- fluidPage(
+    titlePanel("Modular Scatterplots"),
+    sidebarLayout(
+      sidebarPanel(
+        lapply(names(data_list), function(name) {
+          scatterplotInputsUI(name, data_list[[name]])
+        }),
+        hr()
+      ),
+      mainPanel(
+        lapply(names(data_list), function(name) {
+          scatterplotOutputUI(name)
+        }),
+        hr()
+      )
     )
   )
-)
 
-server <- function(input, output, session) {
-  scatterplotServer("scatter1", data = mtcars)
-  scatterplotServer("scatter2", data = iris)
+  # Server function
+  server <- function(input, output, session) {
+    lapply(names(data_list), function(name) {
+      scatterplotServer(name, data = data_list[[name]])
+    })
+  }
+
+  # Return the Shiny app
+  shinyApp(ui, server)
 }
 
-shinyApp(ui, server)

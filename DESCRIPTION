@@ -1,0 +1,16 @@
+Package: ShinyBaseModules
+Title: Flexible, Interactive Shiny Base Modules For Common Plot Types
+Version: 0.99.0.9000
+Authors@R: 
+    person("Jared", "Andrews", "jared.andrews07@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-0780-6248"))
+Description: ShinyBaseModules offers a core selection of Shiny modules for common 
+    plot types meant to serve as the base for more complex modules. These modules
+    allow for the rapid and convenient construction of Shiny apps with very few lines
+    of code and decouple plotting from the underlying data.As is, these modules allow 
+    for full plot aesthetic customization by the end user through UI inputs. Utility
+    functions for simple UI organization are also provided.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
