@@ -1,3 +1,3 @@
-# ShinyBaseModules (development version)
+# dittoVizModules (development version)
 
 * Initial CRAN submission.

@@ -15,7 +15,7 @@
 #' 
 #' @author Jared Andrews
 #' @examples
-#' library(ShinyBaseModules)
+#' library(dittoVizModules)
 #' # Example 1: Basic usage with a simple grid
 #' ui_inputs <- tagList(
 #'   textInput("name", "Name"),
