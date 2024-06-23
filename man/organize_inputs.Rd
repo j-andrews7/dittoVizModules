@@ -2,7 +2,7 @@
 % Please edit documentation in R/ui_utils.R
 \name{organize_inputs}
 \alias{organize_inputs}
-\title{Function to organize inputs into a grid layout}
+\title{Organize arbitrary Shiny inputs into a grid layout}
 \usage{
 organize_inputs(
   tag_list,
@@ -30,28 +30,28 @@ A Shiny tagList with inputs organized into a grid, optionally
 nested inside a tabsetPanel.
 }
 \description{
-Function to organize inputs into a grid layout
+Organize arbitrary Shiny inputs into a grid layout
 }
 \examples{
-library(ShinyBaseModules)
+library(dittoVizModules)
 # Example 1: Basic usage with a simple grid
 ui_inputs <- tagList(
-  textInput("name", "Name"),
-  numericInput("age", "Age", value = 30),
-  selectInput("gender", "Gender", choices = c("Male", "Female", "Other"))
+    textInput("name", "Name"),
+    numericInput("age", "Age", value = 30),
+    selectInput("gender", "Gender", choices = c("Male", "Female", "Other"))
 )
 organize_inputs(ui_inputs, columns = 2, rows = 2)
 
 # Example 2: Using a named list to create tabs
 ui_inputs_tabs <- list(
-  Personal = tagList(
-    textInput("firstname", "First Name"),
-    textInput("lastname", "Last Name")
-  ),
-  Settings = tagList(
-    checkboxInput("newsletter", "Subscribe to newsletter", value = TRUE),
-    sliderInput("volume", "Volume", min = 0, max = 100, value = 50)
-  )
+    Personal = tagList(
+        textInput("firstname", "First Name"),
+        textInput("lastname", "Last Name")
+    ),
+    Settings = tagList(
+        checkboxInput("newsletter", "Subscribe to newsletter", value = TRUE),
+        sliderInput("volume", "Volume", min = 0, max = 100, value = 50)
+    )
 )
 organize_inputs(ui_inputs_tabs)
 
