@@ -224,7 +224,6 @@ scatterPlotServer <- function(id, data) {
 
             # Change textInputs and selectInputs to NULL if empty
             null_inputs <- list(
-                "rows.use" = isolate(input$rows.use),
                 "trajectory.group.by" = isolate(input$trajectory.group.by),
                 "add.trajectory.by.groups" = isolate(input$add.trajectory.by.groups),
                 "add.xline" = isolate(input$add.xline),
@@ -254,7 +253,7 @@ scatterPlotServer <- function(id, data) {
                 shape.by = null_inputs$shape.by,
                 split.by = null_inputs$split.by,
                 size = isolate(input$size),
-                rows.use = null_inputs$rows.use,
+                rows.use = with(data, eval(str2expression(isolate(input$rows.use)))),
                 show.others = isolate(input$show.others),
                 x.adjustment = null_inputs$x.adjustment,
                 y.adjustment = null_inputs$y.adjustment,
