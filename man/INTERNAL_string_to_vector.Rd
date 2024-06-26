@@ -8,10 +8,11 @@
 }
 \arguments{
 \item{x}{A string of elements delimited by comma, whitespace, or new lines,
-e.g. "a, b c,d, e"}
+e.g. "a, b c,d, e".}
 }
 \value{
 A vector of strings like \code{c("a", "b", "c", "d", "e")}.
+If the input is "", just returns "". If the input is \code{NULL}, returns \code{NULL}.
 }
 \description{
 Used to parse text inputs into a vector.

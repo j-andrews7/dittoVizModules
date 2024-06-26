@@ -129,7 +129,10 @@ scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
             textInput(ns("add.trajectory.by.groups"), "Add trajectory by groups",
                 placeholder = "e.g. ['A', 'B']['C', 'D']"
             ),
-            numericInput(ns("trajectory.arrow.size"), "Trajectory arrow size", value = 0.15),
+            numericInput(ns("trajectory.arrow.size"), "Trajectory arrow size",
+                value = 0.15,
+                min = 0, step = 0.05
+            ),
         ),
         "Plotly" = tagList(
             checkboxInput(ns("webgl"), "Plot with webGL", value = TRUE),
@@ -140,7 +143,7 @@ scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
             colourInput(ns("shape.line.color"), "Shape line color",
                 allowTransparent = TRUE, value = "black"
             ),
-            numericInput(ns("shape.line.width"), "Shape line width", value = 4, min = 0, step = 1),
+            numericInput(ns("shape.line.width"), "Shape line width", value = 4, min = 0, step = 0.25),
             selectInput(ns("shape.linetype"), "Shape linetype",
                 choices = c(
                     "solid", "dot", "dash", "longdash",
@@ -158,7 +161,7 @@ scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
                 multiple = TRUE
             ),
             numericInput(ns("hover.round.digits"), "Hover round digits",
-                value = 5, step = 1
+                value = 5, step = 1, min = 1
             ),
             textInput(ns("add.xline"), "Add xlines", placeholder = "e.g. 2, -2"),
             textInput(ns("add.yline"), "Add ylines", placeholder = "e.g. 2, -2"),
@@ -258,9 +261,9 @@ scatterPlotServer <- function(id, data) {
                 x.adjustment = null_inputs$x.adjustment,
                 y.adjustment = null_inputs$y.adjustment,
                 color.adjustment = null_inputs$color.adjustment,
-                x.adj.fxn = null_inputs$x.adj.fxn,
-                y.adj.fxn = null_inputs$y.adj.fxn,
-                color.adj.fxn = null_inputs$color.adj.fxn,
+                x.adj.fxn = eval(str2expression(isolate(input$x.adj.fxn))),
+                y.adj.fxn = eval(str2expression(isolate(input$y.adj.fxn))),
+                color.adj.fxn = eval(str2expression(isolate(input$color.adj.fxn))),
                 split.show.all.others = isolate(input$split.show.all.others),
                 opacity = isolate(input$opacity),
                 color.panel = dittoColors(),
@@ -294,13 +297,13 @@ scatterPlotServer <- function(id, data) {
                 do.contour = isolate(input$do.contour),
                 contour.color = isolate(input$contour.color),
                 contour.linetype = isolate(input$contour.linetype),
-                add.trajectory.by.groups = null_inputs$add.trajectory.by.groups,
+                add.trajectory.by.groups = .string_to_list_of_vectors(null_inputs$add.trajectory.by.groups),
                 trajectory.group.by = null_inputs$trajectory.group.by,
                 trajectory.arrow.size = isolate(input$trajectory.arrow.size),
-                add.xline = NULL,
+                add.xline = as.numeric(.string_to_vector(null_inputs$add.xline)),
                 xline.linetype = isolate(input$xline.linetype),
                 xline.color = isolate(input$xline.color),
-                add.yline = NULL,
+                add.yline = as.numeric(.string_to_vector(null_inputs$add.yline)),
                 yline.linetype = isolate(input$yline.linetype),
                 yline.color = isolate(input$yline.color),
                 do.ellipse = isolate(input$do.ellipse),

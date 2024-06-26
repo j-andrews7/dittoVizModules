@@ -12,6 +12,7 @@ Should not contain internal quotes around elements.}
 }
 \value{
 A list like \code{list(c("a", "b", "c"), c("d", "e"))}.
+If the input is "", just returns "". If the input is \code{NULL}, returns \code{NULL}.
 }
 \description{
 Used to parse text inputs into a list of vectors.
