@@ -2,13 +2,13 @@
 
 #' Input UI components for the scatterPlot module
 #' @param id The ID for the Shiny module.
-#' @param data The data frame used for plot generation.
+#' @param data A `reactive` containing the data frame used for plot generation.
 #' @param title An optional title for the UI grid.
 #' @param columns Number of columns for the UI grid.
 #' @return A Shiny tagList containing the UI elements
 #'
 #' @importFrom shiny tagList NS selectInput numericInput sliderInput
-#'   checkboxInput textInput actionButton br
+#'   checkboxInput textInput actionButton br selectizeInput
 #' @importFrom colourpicker colourInput
 #' @export
 #' @author Jared Andrews
@@ -46,7 +46,10 @@ scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
             ),
             selectInput(ns("color.by"), "Color by", choices = choices),
             selectInput(ns("shape.by"), "Shape by", choices = choices),
-            selectInput(ns("split.by"), "Split by", choices = choices),
+            selectizeInput(ns("split.by"), "Split by",
+                choices = choices, selected = NULL,
+                multiple = TRUE, options = list(maxItems = 2)
+            ),
             textInput(ns("rows.use"), "Rows to plot",
                 placeholder = "Filter expression, e.g. Sepal.Length > 5"
             )
@@ -221,46 +224,52 @@ scatterPlotOutputUI <- function(id) {
 #' @export
 #' @author Jared Andrews
 scatterPlotServer <- function(id, data) {
+    stopifnot(is.reactive(data))
+
     moduleServer(id, function(input, output, session) {
         output$scatterPlot <- renderPlotly({
             input$update
 
             # Change textInputs and selectInputs to NULL if empty
-            null_inputs <- list(
+            null_na_inputs <- list(
                 "trajectory.group.by" = isolate(input$trajectory.group.by),
                 "add.trajectory.by.groups" = isolate(input$add.trajectory.by.groups),
                 "add.xline" = isolate(input$add.xline),
                 "add.yline" = isolate(input$add.yline),
                 "color.by" = isolate(input$color.by),
                 "shape.by" = isolate(input$shape.by),
-                "split.by" = isolate(input$split.by),
+                # "split.by" = isolate(input$split.by),
                 "x.adjustment" = isolate(input$x.adjustment),
                 "y.adjustment" = isolate(input$y.adjustment),
                 "color.adjustment" = isolate(input$color.adjustment),
                 "x.adj.fxn" = isolate(input$x.adj.fxn),
                 "y.adj.fxn" = isolate(input$y.adj.fxn),
-                "color.adj.fxn" = isolate(input$color.adj.fxn)
+                "color.adj.fxn" = isolate(input$color.adj.fxn),
+                "split.nrow" = isolate(input$split.nrow),
+                "split.ncol" = isolate(input$split.ncol)
             )
 
-            for (input_name in names(null_inputs)) {
-                if (null_inputs[[input_name]] == "") {
-                    null_inputs[[input_name]] <- NULL
+            for (input_name in names(null_na_inputs)) {
+                if (is.na(null_na_inputs[[input_name]])) {
+                    null_na_inputs[[input_name]] <- NULL
+                } else if (null_na_inputs[[input_name]] == "") {
+                    null_na_inputs[[input_name]] <- NULL
                 }
             }
 
             fig <- scatterPlot(
-                data,
+                data(),
                 x.by = isolate(input$x.by),
                 y.by = isolate(input$y.by),
-                color.by = null_inputs$color.by,
-                shape.by = null_inputs$shape.by,
-                split.by = null_inputs$split.by,
+                color.by = null_na_inputs$color.by,
+                shape.by = null_na_inputs$shape.by,
+                split.by = isolate(input$split.by),
                 size = isolate(input$size),
-                rows.use = with(data, eval(str2expression(isolate(input$rows.use)))),
+                rows.use = with(data(), eval(str2expression(isolate(input$rows.use)))),
                 show.others = isolate(input$show.others),
-                x.adjustment = null_inputs$x.adjustment,
-                y.adjustment = null_inputs$y.adjustment,
-                color.adjustment = null_inputs$color.adjustment,
+                x.adjustment = null_na_inputs$x.adjustment,
+                y.adjustment = null_na_inputs$y.adjustment,
+                color.adjustment = null_na_inputs$color.adjustment,
                 x.adj.fxn = eval(str2expression(isolate(input$x.adj.fxn))),
                 y.adj.fxn = eval(str2expression(isolate(input$y.adj.fxn))),
                 color.adj.fxn = eval(str2expression(isolate(input$color.adj.fxn))),
@@ -268,11 +277,11 @@ scatterPlotServer <- function(id, data) {
                 opacity = isolate(input$opacity),
                 color.panel = dittoColors(),
                 colors = seq_along(dittoColors()),
-                split.nrow = NULL,
-                split.ncol = NULL,
+                split.nrow = null_na_inputs$split.nrow,
+                split.ncol = null_na_inputs$split.ncol,
                 split.adjust = list(),
                 multivar.split.dir = c("col", "row"),
-                shape.panel = c(16, 15, 17, 23, 25, 8),
+                shape.panel = as.numeric(.string_to_vector(isolate(input$shape.panel))),
                 rename.color.groups = NULL,
                 rename.shape.groups = NULL,
                 min.color = isolate(input$min.color),
@@ -283,36 +292,36 @@ scatterPlotServer <- function(id, data) {
                 theme = theme_bw(),
                 do.hover = TRUE,
                 hover.data = unique(c(
-                    null_inputs$color.by,
-                    paste0(null_inputs$color.by, ".color.adj"),
+                    null_na_inputs$color.by,
+                    paste0(null_na_inputs$color.by, ".color.adj"),
                     "color.multi", "color.which",
                     isolate(input$x.by),
                     paste0(isolate(input$x.by), ".x.adj"),
                     isolate(input$y.by),
                     paste0(isolate(input$y.by), ".y.adj"),
-                    null_inputs$shape.by,
-                    null_inputs$split.by
+                    null_na_inputs$shape.by,
+                    null_na_inputs$split.by
                 )),
                 hover.round.digits = isolate(input$hover.round.digits),
                 do.contour = isolate(input$do.contour),
                 contour.color = isolate(input$contour.color),
                 contour.linetype = isolate(input$contour.linetype),
-                add.trajectory.by.groups = .string_to_list_of_vectors(null_inputs$add.trajectory.by.groups),
-                trajectory.group.by = null_inputs$trajectory.group.by,
+                add.trajectory.by.groups = .string_to_list_of_vectors(null_na_inputs$add.trajectory.by.groups),
+                trajectory.group.by = null_na_inputs$trajectory.group.by,
                 trajectory.arrow.size = isolate(input$trajectory.arrow.size),
-                add.xline = as.numeric(.string_to_vector(null_inputs$add.xline)),
+                add.xline = as.numeric(.string_to_vector(null_na_inputs$add.xline)),
                 xline.linetype = isolate(input$xline.linetype),
                 xline.color = isolate(input$xline.color),
-                add.yline = as.numeric(.string_to_vector(null_inputs$add.yline)),
+                add.yline = as.numeric(.string_to_vector(null_na_inputs$add.yline)),
                 yline.linetype = isolate(input$yline.linetype),
                 yline.color = isolate(input$yline.color),
                 do.ellipse = isolate(input$do.ellipse),
                 legend.show = isolate(input$legend.show),
-                legend.color.title = "make",
+                legend.color.title = isolate(input$legend.color.title),
                 legend.color.size = isolate(input$legend.color.size),
                 legend.color.breaks = waiver(),
                 legend.color.breaks.labels = waiver(),
-                legend.shape.title = null_inputs$shape.by,
+                legend.shape.title = null_na_inputs$shape.by,
                 legend.shape.size = isolate(input$legend.shape.size),
                 show.grid.lines = isolate(input$show.grid.lines)
             )
@@ -321,7 +330,8 @@ scatterPlotServer <- function(id, data) {
                 edits = list(
                     axisTitleText = TRUE,
                     titleText = TRUE,
-                    legendText = TRUE
+                    legendText = TRUE,
+                    legendPosition = TRUE
                 ),
                 toImageButtonOptions = list(
                     format = isolate(input$download.format)
@@ -367,16 +377,19 @@ scatterPlotServer <- function(id, data) {
 #'
 #' @param data_list A named list of data frames for which scatterPlot modules will be created.
 #'
-#' @importFrom shiny fluidPage titlePanel sidebarLayout sidebarPanel mainPanel shinyApp h3
+#' @importFrom shiny fluidPage titlePanel sidebarLayout sidebarPanel mainPanel shinyApp h3 reactive
 #' @export
 #'
 #' @examples
-#' data_list <- list(mtcars = mtcars, iris = iris)
+#' data_list <- list("mtcars" = mtcars, "iris" = iris)
 #' app <- createScatterPlotApp(data_list)
 #' runApp(app)
 createScatterPlotApp <- function(data_list) {
     # Validate input
-    stopifnot(is.list(data_list), all(sapply(data_list, is.data.frame)))
+    stopifnot(is.list(data_list))
+    lapply(data_list, function(data) {
+        stopifnot(is.data.frame(data))
+    })
 
     # UI definition
     ui <- fluidPage(
@@ -398,7 +411,7 @@ createScatterPlotApp <- function(data_list) {
     # Server function
     server <- function(input, output, session) {
         lapply(names(data_list), function(name) {
-            scatterPlotServer(name, data = data_list[[name]])
+            scatterPlotServer(name, data = reactive(data_list[[name]]))
         })
     }
 

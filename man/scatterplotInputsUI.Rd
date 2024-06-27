@@ -9,7 +9,7 @@ scatterPlotInputsUI(id, data, title = NULL, columns = 2)
 \arguments{
 \item{id}{The ID for the Shiny module.}
 
-\item{data}{The data frame used for plot generation.}
+\item{data}{A \code{reactive} containing the data frame used for plot generation.}
 
 \item{title}{An optional title for the UI grid.}
 
