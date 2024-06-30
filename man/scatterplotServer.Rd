@@ -4,7 +4,7 @@
 \alias{scatterPlotServer}
 \title{Server logic for scatterplot module}
 \usage{
-scatterPlotServer(id, data, hide.inputs = NULL, hide.tabs = "Extras")
+scatterPlotServer(id, data, hide.inputs = NULL, hide.tabs = NULL)
 }
 \arguments{
 \item{id}{The ID for the Shiny module}
