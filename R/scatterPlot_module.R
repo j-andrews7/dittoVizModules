@@ -181,7 +181,7 @@ scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
 
     organize_inputs(
         inputs,
-        id = paste0(id, "_scatterPlotTabsetPanel"),
+        id = paste0(id, "-scatterPlotTabsetPanel"),
         title = title,
         tack = tagList(actionButton(ns("update"), "Update Plot"), br()),
         columns = columns
@@ -225,7 +225,7 @@ scatterPlotOutputUI <- function(id) {
 #'
 #' @export
 #' @author Jared Andrews
-scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = "Extras") {
+scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
     stopifnot(is.reactive(data))
 
     moduleServer(id, function(input, output, session) {
@@ -240,7 +240,7 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = "Extras"
         # Hide tabs if specified
         if (!is.null(hide.tabs)) {
             lapply(hide.tabs, function(tab.name) {
-                hideTab(inputId = paste0(id, "_scatterPlotTabsetPanel"), target = tab.name)
+                hideTab(inputId = "scatterPlotTabsetPanel", target = tab.name)
             })
         }
 
