@@ -238,7 +238,6 @@ scatterPlotServer <- function(id, data) {
                 "add.yline" = isolate(input$add.yline),
                 "color.by" = isolate(input$color.by),
                 "shape.by" = isolate(input$shape.by),
-                # "split.by" = isolate(input$split.by),
                 "x.adjustment" = isolate(input$x.adjustment),
                 "y.adjustment" = isolate(input$y.adjustment),
                 "color.adjustment" = isolate(input$color.adjustment),
@@ -246,7 +245,9 @@ scatterPlotServer <- function(id, data) {
                 "y.adj.fxn" = isolate(input$y.adj.fxn),
                 "color.adj.fxn" = isolate(input$color.adj.fxn),
                 "split.nrow" = isolate(input$split.nrow),
-                "split.ncol" = isolate(input$split.ncol)
+                "split.ncol" = isolate(input$split.ncol),
+                "rename.color.groups" = isolate(input$rename.color.groups),
+                "rename.shape.groups" = isolate(input$rename.shape.groups)
             )
 
             for (input_name in names(null_na_inputs)) {
@@ -280,10 +281,10 @@ scatterPlotServer <- function(id, data) {
                 split.nrow = null_na_inputs$split.nrow,
                 split.ncol = null_na_inputs$split.ncol,
                 split.adjust = list(),
-                multivar.split.dir = c("col", "row"),
+                multivar.split.dir = isolate(input$multivar.split.dir),
                 shape.panel = as.numeric(.string_to_vector(isolate(input$shape.panel))),
-                rename.color.groups = NULL,
-                rename.shape.groups = NULL,
+                rename.color.groups = null_na_inputs$rename.color.groups,
+                rename.shape.groups = null_na_inputs$rename.shape.groups,
                 min.color = isolate(input$min.color),
                 max.color = isolate(input$max.color),
                 min.value = isolate(input$min.value),

@@ -50,3 +50,6 @@ po/*~
 rsconnect/
 .Rproj.user
 docs
+
+# Internal docs
+INTERNAL_*

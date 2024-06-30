@@ -9,7 +9,7 @@ Description: dittoVizModules offers a core selection of interactivity-first Shin
     allow for the rapid and convenient construction of Shiny apps with very few lines
     of code and decouple plotting from the underlying data. As is, these modules allow 
     for full plot aesthetic customization by the end user through UI inputs. Utility
-    functions for simple UI organization are also provided.
+    functions for simple UI organization and parsing are also provided.
 License: MIT + file LICENSE
 Imports:
     shiny,
