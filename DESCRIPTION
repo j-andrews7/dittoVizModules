@@ -1,5 +1,5 @@
 Package: dittoVizModules
-Title: Flexible, Interactive Shiny Base Modules For dittoViz Plots
+Title: Flexible, Interactive Shiny Modules For dittoViz Plots
 Version: 0.99.0.9000
 Authors@R: 
     person("Jared", "Andrews", "jared.andrews07@gmail.com", role = c("aut", "cre"),
@@ -15,7 +15,8 @@ Imports:
     shiny,
     colourpicker,
     plotly,
-    dittoViz
+    dittoViz,
+    shinyjs
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
