@@ -181,7 +181,7 @@ scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
 
     organize_inputs(
         inputs,
-        id = paste0(id, "-scatterPlotTabsetPanel"),
+        id = ns("scatterPlotTabsetPanel"),
         title = title,
         tack = tagList(actionButton(ns("update"), "Update Plot"), br()),
         columns = columns
