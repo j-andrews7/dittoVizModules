@@ -4,12 +4,20 @@
 \alias{scatterPlotServer}
 \title{Server logic for scatterplot module}
 \usage{
-scatterPlotServer(id, data)
+scatterPlotServer(id, data, hide.inputs = NULL, hide.tabs = "Extras")
 }
 \arguments{
 \item{id}{The ID for the Shiny module}
 
-\item{data}{The data frame to plot}
+\item{data}{A \code{reactive} containing the data frame to plot}
+
+\item{hide.inputs}{A character vector of input IDs to hide.
+These will still be initialized and their values passed to the plot function,
+but the user will not be able to see/adjust them in the UI.}
+
+\item{hide.tabs}{A character vector of tab names to hide.
+Inputs in these tabs will still be initialized and their values passed to the plot function,
+but the user will not be able to see/adjust them in the UI.}
 }
 \description{
 Server logic for scatterplot module

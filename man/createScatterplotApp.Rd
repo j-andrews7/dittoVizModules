@@ -11,7 +11,7 @@ createScatterPlotApp(data_list)
 }
 \description{
 This function generates a Shiny application with modular \code{\link[dittoViz:scatterPlot]{dittoViz::scatterPlot()}} components.
-Each module is created for each data frame provided in the named list of data frames.
+A module is created for each data frame provided in the named list of data frames.
 }
 \examples{
 data_list <- list("mtcars" = mtcars, "iris" = iris)

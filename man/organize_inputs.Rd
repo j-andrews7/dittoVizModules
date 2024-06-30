@@ -5,7 +5,8 @@
 \title{Organize arbitrary Shiny inputs into a grid layout}
 \usage{
 organize_inputs(
-  tag_list,
+  tag.list,
+  id = NULL,
   title = NULL,
   tack = NULL,
   columns = NULL,
@@ -13,8 +14,10 @@ organize_inputs(
 )
 }
 \arguments{
-\item{tag_list}{A tagList containing UI inputs or a named list
+\item{tag.list}{A tagList containing UI inputs or a named list
 containing multiple tagLists containing UI inputs.}
+
+\item{id}{An optional ID for the tabsetPanel if a named list is provided.}
 
 \item{title}{An optional title for the grid, should be a UI element,
 e.g. h3("Title").}
@@ -35,15 +38,15 @@ Organize arbitrary Shiny inputs into a grid layout
 \examples{
 library(dittoVizModules)
 # Example 1: Basic usage with a simple grid
-ui_inputs <- tagList(
+ui.inputs <- tagList(
     textInput("name", "Name"),
     numericInput("age", "Age", value = 30),
     selectInput("gender", "Gender", choices = c("Male", "Female", "Other"))
 )
-organize_inputs(ui_inputs, columns = 2, rows = 2)
+organize_inputs(ui.inputs, columns = 2, rows = 2)
 
 # Example 2: Using a named list to create tabs
-ui_inputs_tabs <- list(
+ui.inputs.tabs <- list(
     Personal = tagList(
         textInput("firstname", "First Name"),
         textInput("lastname", "Last Name")
@@ -53,15 +56,15 @@ ui_inputs_tabs <- list(
         sliderInput("volume", "Volume", min = 0, max = 100, value = 50)
     )
 )
-organize_inputs(ui_inputs_tabs)
+organize_inputs(ui.inputs.tabs)
 
 # Example 3: Adding an additional UI element with 'tack'
-additional_ui <- actionButton("submit", "Submit")
-organize_inputs(ui_inputs, tack = additional_ui, columns = 3)
+additional.ui <- actionButton("submit", "Submit")
+organize_inputs(ui.inputs, tack = additional.ui, columns = 3)
 
 # Example 4: Handling a case with more inputs than grid cells
-many_inputs <- tagList(replicate(10, textInput("input", "Input")))
-organize_inputs(many_inputs, columns = 3) # Creates more than one row
+many.inputs <- tagList(replicate(10, textInput("input", "Input")))
+organize_inputs(many.inputs, columns = 3) # Creates more than one row
 
 }
 \author{
