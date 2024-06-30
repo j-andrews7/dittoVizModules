@@ -273,6 +273,20 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 }
             }
 
+            # Waiver inputs
+            waiver.inputs <- list(
+                "legend.color.breaks" = isolate(input$legend.color.breaks)
+            )
+
+            # If input is empty, set to waiver()
+            for (input.name in names(waiver.inputs)) {
+                if (waiver.inputs[[input.name]] == "") {
+                    waiver.inputs[[input.name]] <- waiver()
+                } else {
+                    waiver.inputs[[input.name]] <- as.numeric(.string_to_vector(waiver.inputs[[input.name]]))
+                }
+            }
+
             fig <- scatterPlot(
                 data(),
                 x.by = isolate(input$x.by),
@@ -335,7 +349,7 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 legend.show = isolate(input$legend.show),
                 legend.color.title = isolate(input$legend.color.title),
                 legend.color.size = isolate(input$legend.color.size),
-                legend.color.breaks = waiver(),
+                legend.color.breaks = waiver.inputs$legend.color.breaks,
                 legend.color.breaks.labels = waiver(),
                 legend.shape.title = null.na.inputs$shape.by,
                 legend.shape.size = isolate(input$legend.shape.size),
