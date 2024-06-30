@@ -104,8 +104,7 @@ scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
         "Facets" = tagList(
             numericInput(ns("split.nrow"), "Split nrow", step = 1, value = NA),
             numericInput(ns("split.ncol"), "Split ncol", step = 1, value = NA),
-            selectInput(ns("multivar.split.dir"), "Multivar split dir", choices = c("col", "row")),
-            checkboxInput(ns("split.show.all.others"), "Split show all others", value = TRUE)
+            selectInput(ns("multivar.split.dir"), "Multivar split dir", choices = c("col", "row"))
         ),
         "Labels" = tagList(
             checkboxInput(ns("do.label"), "Enable labels", value = FALSE),
