@@ -4,12 +4,14 @@
 \alias{scatterPlotInputsUI}
 \title{Input UI components for the scatterPlot module}
 \usage{
-scatterPlotInputsUI(id, data, title = NULL, columns = 2)
+scatterPlotInputsUI(id, data, defaults = NULL, title = NULL, columns = 2)
 }
 \arguments{
 \item{id}{The ID for the Shiny module.}
 
-\item{data}{A \code{reactive} containing the data frame used for plot generation.}
+\item{data}{The data frame used for plot generation.}
+
+\item{defaults}{A named list of default values for the inputs.}
 
 \item{title}{An optional title for the UI grid.}
 

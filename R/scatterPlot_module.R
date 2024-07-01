@@ -2,7 +2,8 @@
 
 #' Input UI components for the scatterPlot module
 #' @param id The ID for the Shiny module.
-#' @param data A `reactive` containing the data frame used for plot generation.
+#' @param data The data frame used for plot generation.
+#' @param defaults A named list of default values for the inputs.
 #' @param title An optional title for the UI grid.
 #' @param columns Number of columns for the UI grid.
 #' @return A Shiny tagList containing the UI elements
@@ -10,14 +11,14 @@
 #' @importFrom shiny tagList NS selectInput numericInput sliderInput
 #'   checkboxInput textInput actionButton br selectizeInput
 #' @importFrom colourpicker colourInput
-#' 
+#'
 #' @export
 #' @author Jared Andrews
 #' @examples
 #' library(dittoVizModules)
 #' data(mtcars)
 #' scatterPlotInputsUI("scatterPlot", mtcars)
-scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
+scatterPlotInputsUI <- function(id, data, defaults = NULL, title = NULL, columns = 2) {
     ns <- NS(id)
 
     # Get variables of data.
@@ -33,149 +34,437 @@ scatterPlotInputsUI <- function(id, data, title = NULL, columns = 2) {
         FUN = function(x) !is.numeric(x)
     ), use.names = FALSE)])
 
+    # Various other choice vectors
+    adj.choices <- c("", "z-score", "relative.to.max")
+    adj.fxn.choices <- c("", "log2", "log", "log10", "log1p", "as.factor", "abs", "sqrt")
+
     # Create list of Shiny inputs for most scatterPlot parameters
     # Broken up by sensible categories (e.g. "Data", "Point Styling")
     inputs <- list(
         "Data" = tagList(
             selectInput(ns("x.by"), "X-axis variable",
                 choices = choices,
-                selected = choices[2]
+                selected = ifelse("x.by" %in% names(defaults),
+                    ifelse(defaults[["x.by"]] %in% choices, defaults[["x.by"]], choices[2]),
+                    choices[2]
+                )
             ),
             selectInput(ns("y.by"), "Y-axis variable",
                 choices = choices,
-                selected = choices[3]
+                selected = ifelse("y.by" %in% names(defaults),
+                    ifelse(defaults[["y.by"]] %in% choices, defaults[["y.by"]], choices[3]),
+                    choices[3]
+                )
             ),
-            selectInput(ns("color.by"), "Color by", choices = choices),
-            selectInput(ns("shape.by"), "Shape by", choices = cat.choices),
+            selectInput(ns("color.by"), "Color by",
+                choices = choices,
+                selected = ifelse("color.by" %in% names(defaults),
+                    ifelse(defaults[["color.by"]] %in% choices, defaults[["color.by"]], ""),
+                    ""
+                )
+            ),
+            selectInput(ns("shape.by"), "Shape by",
+                choices = cat.choices,
+                selected = ifelse("shape.by" %in% names(defaults),
+                    ifelse(defaults[["shape.by"]] %in% cat.choices, defaults[["shape.by"]], ""),
+                    ""
+                )
+            ),
             selectizeInput(ns("split.by"), "Split by",
-                choices = cat.choices, selected = NULL,
-                multiple = TRUE, options = list(maxItems = 2)
+                choices = cat.choices,
+                selected = ifelse("split.by" %in% names(defaults),
+                    ifelse(all(defaults[["split.by"]] %in% cat.choices), defaults[["split.by"]], ""),
+                    ""
+                ),
+                multiple = TRUE,
+                options = list(maxItems = 2)
             ),
             textInput(ns("rows.use"), "Rows to plot",
-                placeholder = "Filter expression, e.g. Sepal.Length > 5"
+                placeholder = "Filter expression, e.g. Sepal.Length > 5",
+                value = ifelse("rows.use" %in% names(defaults), defaults[["rows.use"]], "")
             )
         ),
         "Adjustments" = tagList(
             selectInput(ns("x.adjustment"), "X-axis adjustment",
-                choices = c("", "z-score", "relative.to.max")
+                choices = adj.choices,
+                selected = ifelse("x.adjustment" %in% names(defaults),
+                    ifelse(defaults[["x.adjustment"]] %in% adj.choices, defaults[["x.adjustment"]], ""),
+                    ""
+                )
             ),
             selectInput(ns("y.adjustment"), "Y-axis adjustment",
-                choices = c("", "z-score", "relative.to.max")
+                choices = adj.choices,
+                selected = ifelse("y.adjustment" %in% names(defaults),
+                    ifelse(defaults[["y.adjustment"]] %in% adj.choices, defaults[["y.adjustment"]], ""),
+                    ""
+                )
             ),
             selectInput(ns("color.adjustment"), "Color adjustment",
-                choices = c("", "z-score", "relative.to.max")
+                choices = adj.choices,
+                selected = ifelse("color.adjustment" %in% names(defaults),
+                    ifelse(defaults[["color.adjustment"]] %in% adj.choices, defaults[["color.adjustment"]], ""),
+                    ""
+                )
             ),
             selectInput(ns("x.adj.fxn"), "X-axis adjustment function",
-                choices = c("", "log2", "log", "log10", "log1p", "as.factor")
+                choices = adj.fxn.choices,
+                selected = ifelse("x.adj.fxn" %in% names(defaults),
+                    ifelse(defaults[["x.adj.fxn"]] %in% adj.fxn.choices, defaults[["x.adj.fxn"]], ""),
+                    ""
+                )
             ),
             selectInput(ns("y.adj.fxn"), "Y-axis adjustment function",
-                choices = c("", "log2", "log", "log10", "log1p", "as.factor")
+                choices = adj.fxn.choices,
+                selected = ifelse("y.adj.fxn" %in% names(defaults),
+                    ifelse(defaults[["y.adj.fxn"]] %in% adj.fxn.choices, defaults[["y.adj.fxn"]], ""),
+                    ""
+                )
             ),
             selectInput(ns("color.adj.fxn"), "Color adjustment function",
-                choices = c("", "log2", "log", "log10", "log1p", "as.factor")
+                choices = adj.fxn.choices,
+                selected = ifelse("color.adj.fxn" %in% names(defaults),
+                    ifelse(defaults[["color.adj.fxn"]] %in% adj.fxn.choices, defaults[["color.adj.fxn"]], ""),
+                    ""
+                )
             )
         ),
         "Points" = tagList(
-            numericInput(ns("size"), "Point size", value = 1, min = 0.1),
-            numericInput(ns("opacity"), "Point opacity", value = 1, max = 1, min = 0),
-            checkboxInput(ns("show.others"), "Show others", value = TRUE),
+            numericInput(ns("size"), "Point size",
+                value = ifelse("size" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["size"]]), defaults[["size"]], 1),
+                    1
+                ),
+                min = 0.1
+            ),
+            numericInput(ns("opacity"), "Point opacity",
+                value = ifelse("opacity" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["opacity"]]), defaults[["opacity"]], 1),
+                    1
+                ),
+                max = 1,
+                min = 0
+            ),
+            checkboxInput(ns("show.others"), "Show others",
+                value = ifelse("show.others" %in% names(defaults),
+                    ifelse(is.logical(defaults[["show.others"]]), defaults[["show.others"]], TRUE),
+                    TRUE
+                )
+            ),
             checkboxInput(ns("split.show.all.others"),
                 "Show split others",
-                value = TRUE
+                value = ifelse("split.show.all.others" %in% names(defaults),
+                    ifelse(is.logical(defaults[["split.show.all.others"]]), defaults[["split.show.all.others"]], TRUE),
+                    TRUE
+                )
             ),
             selectInput(ns("plot.order"), "Plot order",
-                choices = c("unordered", "increasing", "decreasing", "randomize")
+                choices = c("unordered", "increasing", "decreasing", "randomize"),
+                selected = ifelse("plot.order" %in% names(defaults),
+                    ifelse(defaults[["plot.order"]] %in% c(
+                        "unordered", "increasing", "decreasing", "randomize"
+                    ), defaults[["plot.order"]], "unordered"),
+                    "unordered"
+                )
             ),
             textInput(ns("shape.panel"), "Shape panel",
-                value = "16, 15, 17, 23, 25, 8"
+                value = ifelse("shape.panel" %in% names(defaults),
+                    defaults[["shape.panel"]], "16, 15, 17, 23, 25, 8"
+                )
             )
         ),
         "Colors" = tagList(
-            colourInput(ns("min.color"), "Min color", value = "#F0E442"),
-            colourInput(ns("max.color"), "Max color", value = "#0072B2"),
-            colourInput(ns("contour.color"), "Contour color", value = "black"),
+            colourInput(ns("min.color"), "Min color",
+                value = ifelse("min.color" %in% names(defaults),
+                    defaults[["min.color"]], "#F0E442"
+                )
+            ),
+            colourInput(ns("max.color"), "Max color",
+                value = ifelse("max.color" %in% names(defaults),
+                    defaults[["max.color"]], "#0072B2"
+                )
+            ),
+            colourInput(ns("contour.color"), "Contour color",
+                value = ifelse("contour.color" %in% names(defaults),
+                    defaults[["contour.color"]], "black"
+                )
+            ),
             selectInput(ns("contour.linetype"), "Contour linetype",
                 choices = c(
                     "solid", "dashed", "dotted", "dotdash",
                     "longdash", "twodash"
+                ),
+                selected = ifelse("contour.linetype" %in% names(defaults),
+                    ifelse(defaults[["contour.linetype"]] %in% c(
+                        "solid", "dashed", "dotted", "dotdash",
+                        "longdash", "twodash"
+                    ), defaults[["contour.linetype"]], "solid"),
+                    "solid"
                 )
             )
         ),
         "Facets" = tagList(
-            numericInput(ns("split.nrow"), "Split nrow", step = 1, value = NA),
-            numericInput(ns("split.ncol"), "Split ncol", step = 1, value = NA),
-            selectInput(ns("multivar.split.dir"), "Multivar split dir", choices = c("col", "row"))
+            numericInput(ns("split.nrow"), "Split nrow",
+                step = 1, min = 0,
+                value = ifelse("split.nrow" %in% names(defaults) & is.numeric(defaults[["split.nrow"]]),
+                    ifelse(is.numeric(defaults[["split.nrow"]]), defaults[["split.nrow"]], NA),
+                    NA
+                )
+            ),
+            numericInput(ns("split.ncol"), "Split ncol",
+                step = 1, min = 0,
+                value = ifelse("split.ncol" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["split.ncol"]]), defaults[["split.ncol"]], NA),
+                    NA
+                )
+            ),
+            selectInput(ns("multivar.split.dir"), "Multivar split dir",
+                choices = c("col", "row"),
+                selected = ifelse("multivar.split.dir" %in% names(defaults),
+                    ifelse(defaults[["multivar.split.dir"]] %in% c("col", "row"),
+                        defaults[["multivar.split.dir"]], "col"
+                    ),
+                    "col"
+                )
+            )
         ),
         "Labels" = tagList(
-            checkboxInput(ns("do.label"), "Enable labels", value = FALSE),
-            checkboxInput(ns("labels.highlight"), "Highlight labels", value = TRUE),
-            checkboxInput(ns("labels.repel"), "Repel labels", value = TRUE),
-            numericInput(ns("labels.size"), "Labels size", min = 1, value = 5)
+            checkboxInput(ns("do.label"), "Enable labels",
+                value = ifelse("do.label" %in% names(defaults),
+                    ifelse(is.logical(defaults[["do.label"]]), defaults[["do.label"]], FALSE),
+                    FALSE
+                )
+            ),
+            checkboxInput(ns("labels.highlight"), "Highlight labels",
+                value = ifelse("labels.highlight" %in% names(defaults),
+                    ifelse(is.logical(defaults[["labels.highlight"]]), defaults[["labels.highlight"]], TRUE),
+                    TRUE
+                )
+            ),
+            checkboxInput(ns("labels.repel"), "Repel labels",
+                value = ifelse("labels.repel" %in% names(defaults),
+                    ifelse(is.logical(defaults[["labels.repel"]]), defaults[["labels.repel"]], TRUE),
+                    TRUE
+                )
+            ),
+            numericInput(ns("labels.size"), "Labels size",
+                min = 1,
+                value = ifelse("labels.size" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["labels.size"]]), defaults[["labels.size"]], 5),
+                    5
+                )
+            )
         ),
         "Legend/Scale" = tagList(
-            checkboxInput(ns("legend.show"), "Enable legend", value = TRUE),
-            textInput(ns("legend.color.title"), "Legend title", value = "make"),
-            numericInput(ns("legend.color.size"), "Legend color size", min = 1, value = 5),
-            numericInput(ns("legend.shape.size"), "Legend shape size", min = 1, value = 5),
-            textInput(ns("legend.color.breaks"), "Legend tick breaks", placeholder = "e.g. -3, 0, 3"),
-            numericInput(ns("min.value"), "Min value", value = NA),
-            numericInput(ns("max.value"), "Max value", value = NA)
+            checkboxInput(ns("legend.show"), "Enable legend",
+                value = ifelse("legend.show" %in% names(defaults),
+                    ifelse(is.logical(defaults[["legend.show"]]), defaults[["legend.show"]], TRUE),
+                    TRUE
+                )
+            ),
+            textInput(ns("legend.color.title"), "Legend title",
+                value = ifelse("legend.color.title" %in% names(defaults),
+                    defaults[["legend.color.title"]], "make"
+                )
+            ),
+            numericInput(ns("legend.color.size"), "Legend color size",
+                min = 1,
+                value = ifelse("legend.color.size" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["legend.color.size"]]), defaults[["legend.color.size"]], 5),
+                    5
+                )
+            ),
+            numericInput(ns("legend.shape.size"), "Legend shape size",
+                min = 1,
+                value = ifelse("legend.shape.size" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["legend.shape.size"]]), defaults[["legend.shape.size"]], 5),
+                    5
+                )
+            ),
+            textInput(ns("legend.color.breaks"), "Legend tick breaks",
+                placeholder = "e.g. -3, 0, 3",
+                value = ifelse("legend.color.breaks" %in% names(defaults),
+                    ifelse(is.character(defaults[["legend.color.breaks"]]), defaults[["legend.color.breaks"]], ""),
+                    ""
+                )
+            ),
+            numericInput(ns("min.value"), "Min value",
+                value = ifelse("min.value" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["min.value"]]), defaults[["min.value"]], NA),
+                    NA
+                )
+            ),
+            numericInput(ns("max.value"), "Max value",
+                value = ifelse("max.value" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["max.value"]]), defaults[["max.value"]], NA),
+                    NA
+                )
+            )
         ),
         "Trajectory" = tagList(
-            selectInput(ns("trajectory.group.by"), "Trajectory group by", choices = cat.choices),
+            selectInput(ns("trajectory.group.by"), "Trajectory group by",
+                choices = cat.choices,
+                selected = ifelse("trajectory.group.by" %in% names(defaults),
+                    ifelse(defaults[["trajectory.group.by"]] %in% cat.choices, defaults[["trajectory.group.by"]], ""),
+                    ""
+                )
+            ),
             textInput(ns("add.trajectory.by.groups"), "Add trajectory by groups",
-                placeholder = "e.g. [A,B][C,D,E]"
+                placeholder = "e.g. [A,B],[C,D,E]",
+                value = ifelse("add.trajectory.by.groups" %in% names(defaults),
+                    defaults[["add.trajectory.by.groups"]], ""
+                )
             ),
             numericInput(ns("trajectory.arrow.size"), "Trajectory arrow size",
-                value = 0.15,
-                min = 0, step = 0.05
-            ),
+                value = ifelse("trajectory.arrow.size" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["trajectory.arrow.size"]]), defaults[["trajectory.arrow.size"]], 0.15),
+                    0.15
+                ),
+                min = 0,
+                step = 0.05
+            )
         ),
         "Plotly" = tagList(
-            checkboxInput(ns("webgl"), "Plot with webGL", value = TRUE),
-            selectInput(ns("download.format"), "Download format", choices = c("svg", "png")),
+            checkboxInput(ns("webgl"), "Plot with webGL",
+                value = ifelse("webgl" %in% names(defaults),
+                    ifelse(is.logical(defaults[["webgl"]]), defaults[["webgl"]], TRUE),
+                    TRUE
+                )
+            ),
+            selectInput(ns("download.format"), "Download format",
+                choices = c("svg", "png"),
+                selected = ifelse("download.format" %in% names(defaults),
+                    ifelse(defaults[["download.format"]] %in% c("svg", "png"), defaults[["download.format"]], "svg"),
+                    "svg"
+                )
+            ),
             colourInput(ns("shape.fill"), "Shape fill",
-                allowTransparent = TRUE, value = "rgba(0, 0, 0, 0)"
+                allowTransparent = TRUE,
+                value = ifelse("shape.fill" %in% names(defaults),
+                    defaults[["shape.fill"]], "rgba(0, 0, 0, 0)"
+                )
             ),
             colourInput(ns("shape.line.color"), "Shape line color",
-                allowTransparent = TRUE, value = "black"
+                allowTransparent = TRUE,
+                value = ifelse("shape.line.color" %in% names(defaults),
+                    defaults[["shape.line.color"]], "black"
+                )
             ),
-            numericInput(ns("shape.line.width"), "Shape line width", value = 4, min = 0, step = 0.25),
+            numericInput(ns("shape.line.width"), "Shape line width",
+                value = ifelse("shape.line.width" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["shape.line.width"]]), defaults[["shape.line.width"]], 4),
+                    4
+                ),
+                min = 0,
+                step = 0.25
+            ),
             selectInput(ns("shape.linetype"), "Shape linetype",
                 choices = c(
                     "solid", "dot", "dash", "longdash",
                     "dashdot", "longdashdot"
+                ),
+                selected = ifelse("shape.linetype" %in% names(defaults),
+                    ifelse(defaults[["shape.linetype"]] %in% c(
+                        "solid", "dot", "dash", "longdash",
+                        "dashdot", "longdashdot"
+                    ), defaults[["shape.linetype"]], "solid"),
+                    "solid"
                 )
             ),
-            numericInput(ns("shape.opacity"), "Shape opacity", value = 1, min = 0, max = 1, step = 0.01)
+            numericInput(ns("shape.opacity"), "Shape opacity",
+                value = ifelse("shape.opacity" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["shape.opacity"]]), defaults[["shape.opacity"]], 1),
+                    1
+                ),
+                min = 0,
+                max = 1,
+                step = 0.01
+            )
         ),
         "Extras" = tagList(
-            checkboxInput(ns("do.ellipse"), "Enable ellipses", value = FALSE),
-            checkboxInput(ns("do.contour"), "Enable contour", value = FALSE),
-            checkboxInput(ns("show.grid.lines"), "Show gridlines", value = TRUE),
+            checkboxInput(ns("do.ellipse"), "Enable ellipses",
+                value = ifelse("do.ellipse" %in% names(defaults),
+                    ifelse(is.logical(defaults[["do.ellipse"]]), defaults[["do.ellipse"]], FALSE),
+                    FALSE
+                )
+            ),
+            checkboxInput(ns("do.contour"), "Enable contour",
+                value = ifelse("do.contour" %in% names(defaults),
+                    ifelse(is.logical(defaults[["do.contour"]]), defaults[["do.contour"]], FALSE),
+                    FALSE
+                )
+            ),
+            checkboxInput(ns("show.grid.lines"), "Show gridlines",
+                value = ifelse("show.grid.lines" %in% names(defaults),
+                    ifelse(is.logical(defaults[["show.grid.lines"]]), defaults[["show.grid.lines"]], TRUE),
+                    TRUE
+                )
+            ),
             selectInput(ns("hover.data"), "Hover data",
                 choices = choices,
-                multiple = TRUE
+                multiple = TRUE,
+                selected = ifelse("hover.data" %in% names(defaults),
+                    ifelse(all(defaults[["hover.data"]] %in% choices), defaults[["hover.data"]], ""),
+                    ""
+                )
             ),
             numericInput(ns("hover.round.digits"), "Hover round digits",
-                value = 5, step = 1, min = 1
+                value = ifelse("hover.round.digits" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["hover.round.digits"]]), defaults[["hover.round.digits"]], 5),
+                    5
+                ),
+                step = 1,
+                min = 1
             ),
-            textInput(ns("add.xline"), "Add xlines", placeholder = "e.g. 2, -2"),
-            textInput(ns("add.yline"), "Add ylines", placeholder = "e.g. 2, -2"),
+            textInput(ns("add.xline"), "Add xlines",
+                placeholder = "e.g. 2, -2",
+                value = ifelse("add.xline" %in% names(defaults),
+                    ifelse(is.character(defaults[["add.xline"]]), defaults[["add.xline"]], ""),
+                    ""
+                )
+            ),
+            textInput(ns("add.yline"), "Add ylines",
+                placeholder = "e.g. 2, -2",
+                value = ifelse("add.yline" %in% names(defaults),
+                    ifelse(is.character(defaults[["add.yline"]]), defaults[["add.yline"]], ""),
+                    ""
+                )
+            ),
             selectInput(ns("xline.linetype"), "xline linetype",
                 choices = c(
                     "solid", "dashed", "dotted", "dotdash",
                     "longdash", "twodash"
+                ),
+                selected = ifelse("xline.linetype" %in% names(defaults),
+                    ifelse(defaults[["xline.linetype"]] %in% c(
+                        "solid", "dashed", "dotted", "dotdash",
+                        "longdash", "twodash"
+                    ), defaults[["xline.linetype"]], "solid"),
+                    "solid"
                 )
             ),
             selectInput(ns("yline.linetype"), "yline linetype",
                 choices = c(
                     "solid", "dashed", "dotted", "dotdash",
                     "longdash", "twodash"
+                ),
+                selected = ifelse("yline.linetype" %in% names(defaults),
+                    ifelse(defaults[["yline.linetype"]] %in% c(
+                        "solid", "dashed", "dotted", "dotdash",
+                        "longdash", "twodash"
+                    ), defaults[["yline.linetype"]], "solid"),
+                    "solid"
                 )
             ),
-            colourInput(ns("xline.color"), "xline color", value = "black"),
-            colourInput(ns("yline.color"), "yline color", value = "black")
+            colourInput(ns("xline.color"), "xline color",
+                value = ifelse("xline.color" %in% names(defaults),
+                    defaults[["xline.color"]], "black"
+                )
+            ),
+            colourInput(ns("yline.color"), "yline color",
+                value = ifelse("yline.color" %in% names(defaults),
+                    defaults[["yline.color"]], "black"
+                )
+            )
         )
     )
 
@@ -213,7 +502,7 @@ scatterPlotOutputUI <- function(id) {
 #' @param hide.inputs A character vector of input IDs to hide.
 #'   These will still be initialized and their values passed to the plot function,
 #'   but the user will not be able to see/adjust them in the UI.
-#' @param hide.tabs A character vector of tab names to hide. 
+#' @param hide.tabs A character vector of tab names to hide.
 #'   Inputs in these tabs will still be initialized and their values passed to the plot function,
 #'   but the user will not be able to see/adjust them in the UI.
 #'
@@ -229,7 +518,6 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
     stopifnot(is.reactive(data))
 
     moduleServer(id, function(input, output, session) {
-        
         # Hide individual inputs if specified
         if (!is.null(hide.inputs)) {
             lapply(hide.inputs, function(input.name) {
@@ -255,6 +543,7 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 "add.yline" = isolate(input$add.yline),
                 "color.by" = isolate(input$color.by),
                 "shape.by" = isolate(input$shape.by),
+                "split.by" = isolate(input$split.by),
                 "x.adjustment" = isolate(input$x.adjustment),
                 "y.adjustment" = isolate(input$y.adjustment),
                 "color.adjustment" = isolate(input$color.adjustment),
@@ -266,10 +555,12 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
             )
 
             for (input.name in names(null.na.inputs)) {
-                if (is.na(null.na.inputs[[input.name]])) {
-                    null.na.inputs[[input.name]] <- NULL
-                } else if (null.na.inputs[[input.name]] == "") {
-                    null.na.inputs[[input.name]] <- NULL
+                if (!is.null(null.na.inputs[[input.name]])) {
+                    if (is.na(null.na.inputs[[input.name]])) {
+                        null.na.inputs[[input.name]] <- NULL
+                    } else if (null.na.inputs[[input.name]] == "") {
+                        null.na.inputs[[input.name]] <- NULL
+                    }
                 }
             }
 
@@ -287,13 +578,15 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 }
             }
 
+            browser()
+
             fig <- scatterPlot(
                 data(),
                 x.by = isolate(input$x.by),
                 y.by = isolate(input$y.by),
                 color.by = null.na.inputs$color.by,
                 shape.by = null.na.inputs$shape.by,
-                split.by = isolate(input$split.by),
+                split.by = null.na.inputs$split.by,
                 size = isolate(input$size),
                 rows.use = with(data(), eval(str2expression(isolate(input$rows.use)))),
                 show.others = isolate(input$show.others),
@@ -432,9 +725,14 @@ createScatterPlotApp <- function(data_list) {
         titlePanel("Modular scatterPlots"),
         sidebarLayout(
             sidebarPanel(
-                lapply(names(data_list), function(name) {
-                    scatterPlotInputsUI(name, data_list[[name]], title = h3(paste0(name, " Settings")))
-                })
+                scatterPlotInputsUI("iris", data_list[["iris"]],
+                    title = h3("iris Settings"),
+                    defaults = list("x.by" = "Petal.Width")
+                ),
+                scatterPlotInputsUI("mtcars", data_list[["mtcars"]],
+                    title = h3("mtcars Settings"),
+                    defaults = list("y.by" = "vs")
+                )
             ),
             mainPanel(
                 lapply(names(data_list), function(name) {
