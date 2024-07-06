@@ -11,6 +11,7 @@
 #' @importFrom shiny tagList NS selectInput numericInput sliderInput
 #'   checkboxInput textInput actionButton br selectizeInput
 #' @importFrom colourpicker colourInput
+#' @importFrom esquisse palettePicker
 #'
 #' @export
 #' @author Jared Andrews
@@ -199,6 +200,13 @@ scatterPlotInputsUI <- function(id, data, defaults = NULL, title = NULL, columns
                         "longdash", "twodash"
                     ), defaults[["contour.linetype"]], "solid"),
                     "solid"
+                )
+            ),
+            palettePicker(ns("color.panel"), "Color panel",
+                choices = default_palettes()[["choices"]],
+                textColor = default_palettes()[["textColor"]],
+                selected = ifelse("color.panel" %in% names(defaults),
+                    defaults[["color.panel"]], "dittoColors"
                 )
             )
         ),
@@ -506,7 +514,7 @@ scatterPlotOutputUI <- function(id) {
 #'   Inputs in these tabs will still be initialized and their values passed to the plot function,
 #'   but the user will not be able to see/adjust them in the UI.
 #'
-#' @importFrom shiny moduleServer isolate hideTab
+#' @importFrom shiny moduleServer isolate hideTab reactive
 #' @importFrom dittoViz scatterPlot dittoColors
 #' @importFrom ggplot2 theme_bw waiver
 #' @importFrom plotly renderPlotly %>% config layout toWebGL
@@ -531,6 +539,23 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 hideTab(inputId = "scatterPlotTabsetPanel", target = tab.name)
             })
         }
+
+        # Get color panel
+        color.panel <- reactive({
+            if (is.null(input$color.panel) || input$color.panel == "dittoColors") {
+                palette <- dittoColors()
+            } else if (!is.null(input$color.by)) {
+                if (input$color.panel %in% c("viridis", "magma", "inferno", "plasma", "cividis")) {
+                    palette <- viridis_pal(option = input$color.panel)(length(colLevels(input$color.by, data())))
+                } else if (input$color.panel == "ggplot2") {
+                    palette <- hue_pal()(length(colLevels(input$color.by, data())))
+                } else {
+                    palette <- brewer_pal(option = input$color.panel)(length(colLevels(input$color.by, data())))
+                }
+            }
+
+            palette
+        })
 
         output$scatterPlot <- renderPlotly({
             input$update
@@ -578,8 +603,6 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 }
             }
 
-            browser()
-
             fig <- scatterPlot(
                 data(),
                 x.by = isolate(input$x.by),
@@ -598,8 +621,8 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 color.adj.fxn = eval(str2expression(isolate(input$color.adj.fxn))),
                 split.show.all.others = isolate(input$split.show.all.others),
                 opacity = isolate(input$opacity),
-                color.panel = dittoColors(),
-                colors = seq_along(dittoColors()),
+                color.panel = isolate(color.panel()),
+                colors = seq_along(isolate(color.panel())),
                 split.nrow = null.na.inputs$split.nrow,
                 split.ncol = null.na.inputs$split.ncol,
                 split.adjust = list(),
@@ -735,9 +758,7 @@ createScatterPlotApp <- function(data_list) {
                 )
             ),
             mainPanel(
-                lapply(names(data_list), function(name) {
-                    tagList(scatterPlotOutputUI(name), br())
-                })
+                tagList(scatterPlotOutputUI("iris"), br(), scatterPlotOutputUI("mtcars"))
             )
         )
     )

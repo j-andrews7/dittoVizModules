@@ -16,7 +16,9 @@ Imports:
     colourpicker,
     plotly,
     dittoViz,
-    shinyjs
+    shinyjs,
+    scales,
+    esquisse
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
