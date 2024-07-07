@@ -407,7 +407,7 @@ scatterPlotInputsUI <- function(id, data, defaults = NULL, title = NULL, columns
                     TRUE
                 )
             ),
-            selectInput(ns("hover.data"), "Hover data",
+            selectizeInput(ns("hover.data"), "Hover data",
                 choices = choices,
                 multiple = TRUE,
                 selected = ifelse("hover.data" %in% names(defaults),
@@ -514,7 +514,7 @@ scatterPlotOutputUI <- function(id) {
 #'   Inputs in these tabs will still be initialized and their values passed to the plot function,
 #'   but the user will not be able to see/adjust them in the UI.
 #'
-#' @importFrom shiny moduleServer isolate hideTab reactive
+#' @importFrom shiny moduleServer isolate hideTab reactive req
 #' @importFrom dittoViz scatterPlot dittoColors
 #' @importFrom ggplot2 theme_bw waiver
 #' @importFrom plotly renderPlotly %>% config layout toWebGL
@@ -550,7 +550,7 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 } else if (input$color.panel == "ggplot2") {
                     palette <- hue_pal()(length(colLevels(input$color.by, data())))
                 } else {
-                    palette <- brewer_pal(option = input$color.panel)(length(colLevels(input$color.by, data())))
+                    palette <- brewer_pal(palette = input$color.panel)(length(colLevels(input$color.by, data())))
                 }
             }
 
@@ -558,6 +558,7 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
         })
 
         output$scatterPlot <- renderPlotly({
+            req(input$x.by, input$y.by, data())
             input$update
 
             # Change textInputs and selectInputs to NULL if empty
@@ -576,14 +577,15 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 "y.adj.fxn" = isolate(input$y.adj.fxn),
                 "color.adj.fxn" = isolate(input$color.adj.fxn),
                 "split.nrow" = isolate(input$split.nrow),
-                "split.ncol" = isolate(input$split.ncol)
+                "split.ncol" = isolate(input$split.ncol),
+                "hover.data" = isolate(input$hover.data)
             )
 
             for (input.name in names(null.na.inputs)) {
                 if (!is.null(null.na.inputs[[input.name]])) {
-                    if (is.na(null.na.inputs[[input.name]])) {
+                    if (identical(null.na.inputs[[input.name]], NA)) {
                         null.na.inputs[[input.name]] <- NULL
-                    } else if (null.na.inputs[[input.name]] == "") {
+                    } else if (identical(null.na.inputs[[input.name]], "")) {
                         null.na.inputs[[input.name]] <- NULL
                     }
                 }
@@ -601,6 +603,23 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 } else {
                     waiver.inputs[[input.name]] <- as.numeric(.string_to_vector(waiver.inputs[[input.name]]))
                 }
+            }
+
+            # Collect hover data
+            if (identical(null.na.inputs$hover.data, NULL)) {
+                hover.data <- unique(c(
+                    null.na.inputs$color.by,
+                    paste0(null.na.inputs$color.by, ".color.adj"),
+                    "color.multi", "color.which",
+                    isolate(input$x.by),
+                    paste0(isolate(input$x.by), ".x.adj"),
+                    isolate(input$y.by),
+                    paste0(isolate(input$y.by), ".y.adj"),
+                    null.na.inputs$shape.by,
+                    null.na.inputs$split.by
+                ))
+            } else {
+                hover.data <- null.na.inputs$hover.data
             }
 
             fig <- scatterPlot(
@@ -637,17 +656,7 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 plot.order = isolate(input$plot.order),
                 theme = theme_bw(),
                 do.hover = TRUE,
-                hover.data = unique(c(
-                    null.na.inputs$color.by,
-                    paste0(null.na.inputs$color.by, ".color.adj"),
-                    "color.multi", "color.which",
-                    isolate(input$x.by),
-                    paste0(isolate(input$x.by), ".x.adj"),
-                    isolate(input$y.by),
-                    paste0(isolate(input$y.by), ".y.adj"),
-                    null.na.inputs$shape.by,
-                    null.na.inputs$split.by
-                )),
+                hover.data = hover.data,
                 hover.round.digits = isolate(input$hover.round.digits),
                 do.contour = isolate(input$do.contour),
                 contour.color = isolate(input$contour.color),
@@ -680,7 +689,6 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                     legendPosition = TRUE,
                     colorbarPosition = TRUE,
                     colorbarTitleText = TRUE,
-                    shapePosition = TRUE,
                     annotationTail = TRUE
                 ),
                 toImageButtonOptions = list(
@@ -727,7 +735,7 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
 #'
 #' @param data_list A named list of data frames for which scatterPlot modules will be created.
 #'
-#' @importFrom shiny fluidPage titlePanel sidebarLayout sidebarPanel mainPanel shinyApp h3 reactive
+#' @importFrom shiny fluidPage titlePanel sidebarLayout sidebarPanel mainPanel shinyApp h3 reactive hr
 #' @importFrom shinyjs useShinyjs
 #' @export
 #'
@@ -752,6 +760,7 @@ createScatterPlotApp <- function(data_list) {
                     title = h3("iris Settings"),
                     defaults = list("x.by" = "Petal.Width")
                 ),
+                hr(),
                 scatterPlotInputsUI("mtcars", data_list[["mtcars"]],
                     title = h3("mtcars Settings"),
                     defaults = list("y.by" = "vs")
