@@ -7,13 +7,13 @@
 scatterPlotOutputUI(id)
 }
 \arguments{
-\item{id}{The ID for the Shiny module}
+\item{id}{The ID for the Shiny module.}
 }
 \value{
 A Shiny plotlyOutput for the scatterplot
 }
 \description{
-Output UI components for the scatterPlot module
+This should be placed in the UI where the plot should be shown.
 }
 \author{
 Jared Andrews

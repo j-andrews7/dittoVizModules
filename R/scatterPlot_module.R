@@ -143,7 +143,8 @@ scatterPlotInputsUI <- function(id, data, defaults = NULL, title = NULL, columns
                     1
                 ),
                 max = 1,
-                min = 0
+                min = 0,
+                step = 0.05
             ),
             checkboxInput(ns("show.others"), "Show others",
                 value = ifelse("show.others" %in% names(defaults),
@@ -235,32 +236,66 @@ scatterPlotInputsUI <- function(id, data, defaults = NULL, title = NULL, columns
                 )
             )
         ),
-        "Labels" = tagList(
-            checkboxInput(ns("do.label"), "Enable labels",
-                value = ifelse("do.label" %in% names(defaults),
-                    ifelse(is.logical(defaults[["do.label"]]), defaults[["do.label"]], FALSE),
-                    FALSE
+        "Annotations" = tagList(
+            selectInput(ns("annotate.by"), "Annotate by",
+                choices = choices,
+                selected = ifelse("annotate.by" %in% names(defaults),
+                    ifelse(defaults[["annotate.by"]] %in% choices, defaults[["annotate.by"]], ""),
+                    ""
                 )
             ),
-            checkboxInput(ns("labels.highlight"), "Highlight labels",
-                value = ifelse("labels.highlight" %in% names(defaults),
-                    ifelse(is.logical(defaults[["labels.highlight"]]), defaults[["labels.highlight"]], TRUE),
+            colourInput(ns("annotation.color"), "Annotation color",
+                value = ifelse("annotation.color" %in% names(defaults),
+                    defaults[["annotation.color"]], "black"
+                )
+            ),
+            numericInput(ns("annotation.ax"), "Annotation x-axis offset",
+                step = 1,
+                value = ifelse("annotation.ax" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["annotation.ax"]]), defaults[["annotation.ax"]], 20),
+                    20
+                )
+            ),
+            numericInput(ns("annotation.ay"), "Annotation y-axis offset",
+                step = 1,
+                value = ifelse("annotation.ay" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["annotation.ay"]]), defaults[["annotation.ay"]], -20),
+                    -20
+                )
+            ),
+            numericInput(ns("annotation.size"), "Annotation size",
+                min = 1, step = 0.5,
+                value = ifelse("annotation.size" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["annotation.size"]]), defaults[["annotation.size"]], 10),
+                    10
+                )
+            ),
+            checkboxInput(ns("annotation.showarrow"), "Show arrow",
+                value = ifelse("annotation.showarrow" %in% names(defaults),
+                    ifelse(is.logical(defaults[["annotation.showarrow"]]), defaults[["annotation.showarrow"]], TRUE),
                     TRUE
                 )
             ),
-            checkboxInput(ns("labels.repel"), "Repel labels",
-                value = ifelse("labels.repel" %in% names(defaults),
-                    ifelse(is.logical(defaults[["labels.repel"]]), defaults[["labels.repel"]], TRUE),
-                    TRUE
+            colourInput(ns("annotation.arrowcolor"), "Arrow color",
+                value = ifelse("annotation.arrowcolor" %in% names(defaults),
+                    defaults[["annotation.arrowcolor"]], "black"
                 )
             ),
-            numericInput(ns("labels.size"), "Labels size",
-                min = 1,
-                value = ifelse("labels.size" %in% names(defaults),
-                    ifelse(is.numeric(defaults[["labels.size"]]), defaults[["labels.size"]], 5),
-                    5
+            numericInput(ns("annotation.arrowhead"), "Arrowhead style",
+                min = 0, step = 1, max = 7,
+                value = ifelse("annotation.arrowhead" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["annotation.arrowhead"]]), defaults[["annotation.arrowhead"]], 2),
+                    2
                 )
-            )
+            ),
+            numericInput(ns("annotation.arrowwidth"), "Arrow linewidth",
+                min = 0.1, step = 0.25,
+                value = ifelse("annotation.arrowwidth" %in% names(defaults),
+                    ifelse(is.numeric(defaults[["annotation.arrowwidth"]]), defaults[["annotation.arrowwidth"]], 1.5),
+                    1.5
+                )
+            ),
+            actionButton(ns("annotation.clear"), "Clear annotations")
         ),
         "Legend/Scale" = tagList(
             checkboxInput(ns("legend.show"), "Enable legend",
@@ -487,7 +522,10 @@ scatterPlotInputsUI <- function(id, data, defaults = NULL, title = NULL, columns
 
 
 #' Output UI components for the scatterPlot module
-#' @param id The ID for the Shiny module
+#' 
+#' This should be placed in the UI where the plot should be shown.
+#' 
+#' @param id The ID for the Shiny module.
 #'
 #' @return A Shiny plotlyOutput for the scatterplot
 #'
@@ -504,15 +542,16 @@ scatterPlotOutputUI <- function(id) {
 
 ###### Module Server ######
 
-#' Server logic for scatterplot module
-#' @param id The ID for the Shiny module
-#' @param data A `reactive` containing the data frame to plot
+#' Server logic for scatterPlot module
+#' @param id The ID for the Shiny module.
+#' @param data A `reactive` containing the data frame to plot.
 #' @param hide.inputs A character vector of input IDs to hide.
 #'   These will still be initialized and their values passed to the plot function,
 #'   but the user will not be able to see/adjust them in the UI.
 #' @param hide.tabs A character vector of tab names to hide.
 #'   Inputs in these tabs will still be initialized and their values passed to the plot function,
 #'   but the user will not be able to see/adjust them in the UI.
+#' @return The `moduleServer` function for the scatterPlot module.
 #'
 #' @importFrom shiny moduleServer isolate hideTab reactive req
 #' @importFrom dittoViz scatterPlot dittoColors
@@ -557,6 +596,32 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
             palette
         })
 
+        # dataframe of selected data, which is added to with multiple selections
+        selected.data <- reactiveVal()
+
+        # Observer to add selected data to selected.data
+        observeEvent(event_data("plotly_selected"),
+            # suspended = TRUE,
+            {
+                selected <- event_data("plotly_selected")
+                selected.full <- rbind(selected.data(), selected)
+
+                # Since this is running on every selection, remove duplicates
+                keep <- selected.full[!duplicated(selected.full), ]
+
+                if (nrow(keep) == 0) {
+                    selected.data(NULL)
+                } else {
+                    selected.data(keep)
+                }
+            }
+        )
+
+        # Observer to clear selected data
+        observeEvent(input$annotation.clear, {
+            selected.data(NULL)
+        })
+
         output$scatterPlot <- renderPlotly({
             req(input$x.by, input$y.by, data())
             input$update
@@ -578,7 +643,8 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 "color.adj.fxn" = isolate(input$color.adj.fxn),
                 "split.nrow" = isolate(input$split.nrow),
                 "split.ncol" = isolate(input$split.ncol),
-                "hover.data" = isolate(input$hover.data)
+                "hover.data" = isolate(input$hover.data),
+                "annotate.by" = isolate(input$annotate.by)
             )
 
             for (input.name in names(null.na.inputs)) {
@@ -622,7 +688,7 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 hover.data <- null.na.inputs$hover.data
             }
 
-            fig <- scatterPlot(
+            p <- scatterPlot(
                 data(),
                 x.by = isolate(input$x.by),
                 y.by = isolate(input$y.by),
@@ -678,10 +744,13 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 legend.color.breaks.labels = waiver(),
                 legend.shape.title = null.na.inputs$shape.by,
                 legend.shape.size = isolate(input$legend.shape.size),
-                show.grid.lines = isolate(input$show.grid.lines)
+                show.grid.lines = isolate(input$show.grid.lines),
+                data.out = TRUE
             )
 
-            fig <- fig %>% config(
+            plot.data <- p$Target_data
+
+            fig <- p$plot %>% config(
                 edits = list(
                     axisTitleText = TRUE,
                     titleText = TRUE,
@@ -705,6 +774,36 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                 displaylogo = FALSE
             )
 
+            if (!is.null(null.na.inputs$annotate.by) & !is.null(selected.data())) {
+
+                anno.data <- plot.data[,c(isolate(input$x.by), isolate(input$y.by), null.na.inputs$annotate.by)]
+                colnames(anno.data) <- c("x", "y", "text")
+
+                # Filter to rows of anno.data where the x.by and y.by columns BOTH match selected.data()$x and selected.data()$y in the same row
+                anno.data$xy <- paste0(anno.data$x, "_", anno.data$y)
+                anno.data <- anno.data[anno.data$xy %in% paste0(selected.data()$x, "_", selected.data()$y), ]
+
+                annos <- list(
+                    x = anno.data$x,
+                    y = anno.data$y,
+                    text = anno.data$text,
+                    xref = "x",
+                    yref = "y",
+                    ax = isolate(input$annotation.ax),
+                    ay = isolate(input$annotation.ay),
+                    showarrow = isolate(input$annotation.showarrow),
+                    arrowcolor = isolate(input$annotation.arrowcolor),
+                    arrowhead = isolate(input$annotation.arrowhead),
+                    arrowwidth = isolate(input$annotation.arrowwidth),
+                    font = list(
+                        size = isolate(input$annotation.size),
+                        color = isolate(input$annotation.color)
+                    )
+                )
+            } else {
+                annos <- NULL
+            }
+
             fig <- fig %>% layout(
                 newshape = list(
                     fillcolor = isolate(input$shape.fill),
@@ -714,7 +813,8 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
                         dash = isolate(input$shape.linetype)
                     ),
                     opacity = isolate(input$shape.opacity)
-                )
+                ),
+                annotations = annos
             )
 
             if (isolate(input$webgl)) {
@@ -734,10 +834,13 @@ scatterPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL) {
 #' A module is created for each data frame provided in the named list of data frames.
 #'
 #' @param data_list A named list of data frames for which scatterPlot modules will be created.
-#'
+#' @return A Shiny app object.
+#' 
 #' @importFrom shiny fluidPage titlePanel sidebarLayout sidebarPanel mainPanel shinyApp h3 reactive hr
 #' @importFrom shinyjs useShinyjs
 #' @export
+#' 
+#' @author Jared Andrews
 #'
 #' @examples
 #' data_list <- list("mtcars" = mtcars, "iris" = iris)

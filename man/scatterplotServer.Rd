@@ -2,14 +2,14 @@
 % Please edit documentation in R/scatterPlot_module.R
 \name{scatterPlotServer}
 \alias{scatterPlotServer}
-\title{Server logic for scatterplot module}
+\title{Server logic for scatterPlot module}
 \usage{
 scatterPlotServer(id, data, hide.inputs = NULL, hide.tabs = NULL)
 }
 \arguments{
-\item{id}{The ID for the Shiny module}
+\item{id}{The ID for the Shiny module.}
 
-\item{data}{A \code{reactive} containing the data frame to plot}
+\item{data}{A \code{reactive} containing the data frame to plot.}
 
 \item{hide.inputs}{A character vector of input IDs to hide.
 These will still be initialized and their values passed to the plot function,
@@ -19,8 +19,11 @@ but the user will not be able to see/adjust them in the UI.}
 Inputs in these tabs will still be initialized and their values passed to the plot function,
 but the user will not be able to see/adjust them in the UI.}
 }
+\value{
+The \code{moduleServer} function for the scatterPlot module.
+}
 \description{
-Server logic for scatterplot module
+Server logic for scatterPlot module
 }
 \author{
 Jared Andrews
