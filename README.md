@@ -40,24 +40,27 @@ createScatterPlotApp <- function(data_list) {
         titlePanel("Modular scatterPlots"),
         sidebarLayout(
             sidebarPanel(
-                scatterPlotInputsUI("iris", data_list[["iris"]],
-                    title = h3("iris Settings"),
-                    defaults = list("x.by" = "Petal.Width")
-                ),
-                hr(),
-                scatterPlotInputsUI("mtcars", data_list[["mtcars"]],
-                    title = h3("mtcars Settings"),
-                    defaults = list("y.by" = "vs")
-                )
+                # Add the module inputs UI for each data frame
+                lapply(names(data_list), function(name) {
+                    tagList(
+                        scatterPlotInputsUI(name, data_list[[name]], title = h3(paste(name, "Settings"))),
+                        hr()
+                    )
+                })
             ),
             mainPanel(
-                tagList(scatterPlotOutputUI("iris"), br(), scatterPlotOutputUI("mtcars"))
+                # Add the module output UI for each data frame
+                lapply(names(data_list), function(name) {
+                    tagList(scatterPlotOutputUI(name), br())
+                })
             )
         )
     )
 
     # Server function
     server <- function(input, output, session) {
+
+        # Add the module server for each data frame
         lapply(names(data_list), function(name) {
             scatterPlotServer(name, data = reactive(data_list[[name]]))
         })
