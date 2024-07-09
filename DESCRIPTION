@@ -2,7 +2,7 @@ Package: dittoVizModules
 Title: Flexible, Interactive Shiny Modules For dittoViz Plots
 Version: 0.99.0.9000
 Authors@R: 
-    person("Jared", "Andrews", "jared.andrews07@gmail.com", role = c("aut", "cre"),
+    person(given = "Jared", family = "Andrews", email = "jared.andrews07@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-0780-6248"))
 Description: dittoVizModules offers a core selection of interactivity-first Shiny modules for dittoViz 
     plot types meant to serve as the base for more complex modules. These modules
@@ -22,3 +22,4 @@ Imports:
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
+URL: https://j-andrews7.github.io/dittoVizModules/, https://github.com/j-andrews7/dittoVizModules
