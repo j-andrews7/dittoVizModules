@@ -2,7 +2,7 @@ pandoc: 3.1.11
 pkgdown: 2.1.0
 pkgdown_sha: ~
 articles: {}
-last_built: 2024-07-09T05:24Z
+last_built: 2024-07-09T05:28Z
 urls:
   reference: https://j-andrews7.github.io/dittoVizModules/reference
   article: https://j-andrews7.github.io/dittoVizModules/articles

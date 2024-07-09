@@ -90,24 +90,27 @@
 <span>        <span class="fu">titlePanel</span><span class="op">(</span><span class="st">"Modular scatterPlots"</span><span class="op">)</span>,</span>
 <span>        <span class="fu">sidebarLayout</span><span class="op">(</span></span>
 <span>            <span class="fu">sidebarPanel</span><span class="op">(</span></span>
-<span>                <span class="fu"><a href="reference/scatterplotInputsUI.html">scatterPlotInputsUI</a></span><span class="op">(</span><span class="st">"iris"</span>, <span class="va">data_list</span><span class="op">[[</span><span class="st">"iris"</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>                    title <span class="op">=</span> <span class="fu">h3</span><span class="op">(</span><span class="st">"iris Settings"</span><span class="op">)</span>,</span>
-<span>                    defaults <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"x.by"</span> <span class="op">=</span> <span class="st">"Petal.Width"</span><span class="op">)</span></span>
-<span>                <span class="op">)</span>,</span>
-<span>                <span class="fu">hr</span><span class="op">(</span><span class="op">)</span>,</span>
-<span>                <span class="fu"><a href="reference/scatterplotInputsUI.html">scatterPlotInputsUI</a></span><span class="op">(</span><span class="st">"mtcars"</span>, <span class="va">data_list</span><span class="op">[[</span><span class="st">"mtcars"</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>                    title <span class="op">=</span> <span class="fu">h3</span><span class="op">(</span><span class="st">"mtcars Settings"</span><span class="op">)</span>,</span>
-<span>                    defaults <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"y.by"</span> <span class="op">=</span> <span class="st">"vs"</span><span class="op">)</span></span>
-<span>                <span class="op">)</span></span>
+<span>                <span class="co"># Add the module inputs UI for each data frame</span></span>
+<span>                <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">name</span><span class="op">)</span> <span class="op">{</span></span>
+<span>                    <span class="fu">tagList</span><span class="op">(</span></span>
+<span>                        <span class="fu"><a href="reference/scatterplotInputsUI.html">scatterPlotInputsUI</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">data_list</span><span class="op">[[</span><span class="va">name</span><span class="op">]</span><span class="op">]</span>, title <span class="op">=</span> <span class="fu">h3</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">name</span>, <span class="st">"Settings"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                        <span class="fu">hr</span><span class="op">(</span><span class="op">)</span></span>
+<span>                    <span class="op">)</span></span>
+<span>                <span class="op">}</span><span class="op">)</span></span>
 <span>            <span class="op">)</span>,</span>
 <span>            <span class="fu">mainPanel</span><span class="op">(</span></span>
-<span>                <span class="fu">tagList</span><span class="op">(</span><span class="fu"><a href="reference/scatterplotOutputUI.html">scatterPlotOutputUI</a></span><span class="op">(</span><span class="st">"iris"</span><span class="op">)</span>, <span class="fu">br</span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="reference/scatterplotOutputUI.html">scatterPlotOutputUI</a></span><span class="op">(</span><span class="st">"mtcars"</span><span class="op">)</span><span class="op">)</span></span>
+<span>                <span class="co"># Add the module output UI for each data frame</span></span>
+<span>                <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">name</span><span class="op">)</span> <span class="op">{</span></span>
+<span>                    <span class="fu">tagList</span><span class="op">(</span><span class="fu"><a href="reference/scatterplotOutputUI.html">scatterPlotOutputUI</a></span><span class="op">(</span><span class="va">name</span><span class="op">)</span>, <span class="fu">br</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span>                <span class="op">}</span><span class="op">)</span></span>
 <span>            <span class="op">)</span></span>
 <span>        <span class="op">)</span></span>
 <span>    <span class="op">)</span></span>
 <span></span>
 <span>    <span class="co"># Server function</span></span>
 <span>    <span class="va">server</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span>, <span class="va">session</span><span class="op">)</span> <span class="op">{</span></span>
+<span></span>
+<span>        <span class="co"># Add the module server for each data frame</span></span>
 <span>        <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">data_list</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">name</span><span class="op">)</span> <span class="op">{</span></span>
 <span>            <span class="fu"><a href="reference/scatterplotServer.html">scatterPlotServer</a></span><span class="op">(</span><span class="va">name</span>, data <span class="op">=</span> <span class="fu">reactive</span><span class="op">(</span><span class="va">data_list</span><span class="op">[[</span><span class="va">name</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span>        <span class="op">}</span><span class="op">)</span></span>
