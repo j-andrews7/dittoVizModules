@@ -1,7 +1,6 @@
 # The Stats tab
 
-Available on **`dittoViz_yPlot`, `plotthis_BoxPlot`, `plotthis_ViolinPlot`, and
-`dittoViz_freqPlot` only** — the modules that put a numeric value against categorical
+Available on **`dittoViz_yPlot`, `plotthis_BoxPlot`, and `dittoViz_freqPlot` only** — the modules that put a numeric value against categorical
 groups. No other module has one, and `hide.tabs = "Stats"` on a module without it is a
 no-op, not an error.
 
@@ -29,7 +28,7 @@ Note the naming: the toggle is `stats.enabled` (plural), everything else is `sta
 (singular).
 
 ```r
-plotthis_ViolinPlotServer("v", data = reactive(example_rnaseq),
+plotthis_BoxPlotServer("b", data = reactive(example_rnaseq),
     defaults = list(
         x.data        = "cell_type",
         y.data        = "log2_cpm",

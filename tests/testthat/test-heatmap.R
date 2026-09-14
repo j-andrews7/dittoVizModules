@@ -1070,3 +1070,142 @@ test_that("heatmap_fit_width honours a narrowed panel set", {
     expect_true(grepl('"panels":["heatmap"]', html, fixed = TRUE))
     expect_true(grepl('"output":false', html, fixed = TRUE))
 })
+
+test_that("ComplexHeatmap_HeatmapStaticOutputUI renders a plain plot output", {
+    skip_if_not_installed("ComplexHeatmap")
+
+    html <- as.character(ComplexHeatmap_HeatmapStaticOutputUI("h", resizable = FALSE))
+    # The Figure Builder's card CSS targets a direct-child .shiny-plot-output,
+    # so the element must not be wrapped when resizing is off.
+    expect_true(grepl('id="h-HeatmapStatic"', html, fixed = TRUE))
+    expect_true(grepl("shiny-plot-output", html, fixed = TRUE))
+    expect_true(grepl("width:100%", html, fixed = TRUE))
+    expect_true(grepl("height:100%", html, fixed = TRUE))
+
+    # None of the InteractiveComplexHeatmap chrome comes along.
+    expect_false(grepl("_heatmap_resize", html, fixed = TRUE))
+    expect_false(grepl("_heatmap_control", html, fixed = TRUE))
+
+    # Unlike the interactive output, `resizable` is honoured here.
+    expect_true(grepl(
+        "resizable",
+        as.character(ComplexHeatmap_HeatmapStaticOutputUI("h")),
+        fixed = TRUE
+    ))
+
+    expect_true(grepl(
+        'style="width:600px;height:400px;"',
+        as.character(ComplexHeatmap_HeatmapStaticOutputUI(
+            "h",
+            resizable = FALSE, width = "600px", height = "400px"
+        )),
+        fixed = TRUE
+    ))
+})
+
+test_that("ComplexHeatmap_HeatmapServer exposes a vector_svg renderer for figure export", {
+    skip_if_not_installed("ComplexHeatmap")
+    skip_if_not_installed("InteractiveComplexHeatmap")
+    skip_if_not_installed("circlize")
+
+    df <- example_heatmap_matrix
+    sample_cols <- setdiff(names(df), c("gene", "pathway", "mean_expression"))
+    dat <- list(matrix = df, column_annotations = example_heatmap_column_data)
+
+    shiny::testServer(
+        ComplexHeatmap_HeatmapServer,
+        args = list(
+            data = shiny::reactive(dat),
+            defaults = list(
+                matrix.cols = sample_cols, rowname.col = "gene",
+                column_key = "sample"
+            )
+        ),
+        {
+            session$setInputs(
+                matrix.cols = sample_cols, rowname.col = "gene",
+                column_key = "sample", row_filter = "", column_filter = "",
+                auto.update = TRUE
+            )
+
+            render <- attr(session$getReturned(), "vector_svg")
+            expect_true(is.function(render))
+
+            svg <- render(width = 480, height = 380)
+            expect_true(is.character(svg))
+            # The panel is sized in pixels so it lands at the size the canvas
+            # measured, whatever a reader makes of the device's own units.
+            expect_true(startsWith(svg, "<svg "))
+            expect_true(grepl('width="480"', svg, fixed = TRUE))
+            expect_true(grepl('height="380"', svg, fixed = TRUE))
+            # Really the heatmap, not a blank device.
+            expect_true(grepl(df$gene[1], svg, fixed = TRUE))
+            # Ids are namespaced per widget so two panels cannot collide.
+            ids <- unlist(regmatches(svg, gregexpr("id='[^']+", svg)))
+            if (length(ids)) {
+                expect_true(all(grepl("Heatmap-", ids, fixed = TRUE)))
+            }
+        }
+    )
+})
+
+test_that("an exported heatmap keeps its cells at the size they were drawn", {
+    skip_if_not_installed("ComplexHeatmap")
+    skip_if_not_installed("InteractiveComplexHeatmap")
+    skip_if_not_installed("circlize")
+
+    df <- example_heatmap_matrix
+    sample_cols <- setdiff(names(df), c("gene", "pathway", "mean_expression"))
+    dat <- list(matrix = df, column_annotations = example_heatmap_column_data)
+
+    # Annotation tracks on both axes plus a split on each: four legends' worth of
+    # furniture, all of it sized in absolute points. This is the arrangement that
+    # exposed the export being drawn on a smaller canvas than the panel -- the
+    # furniture kept its size and the cells were squeezed to a fraction of a
+    # point, so the exported figure looked nothing like the one on screen.
+    defaults <- list(
+        matrix.cols = sample_cols, rowname.col = "gene", column_key = "sample",
+        row_annotations = list(r1 = list(column = "pathway", side = "Left")),
+        column_annotations = list(
+            c1 = list(column = "condition", side = "Top"),
+            c2 = list(column = "batch", side = "Top")
+        ),
+        row_split_by = "Annotation", row_split_cols = "pathway",
+        column_split_by = "Annotation", column_split_cols = "condition"
+    )
+
+    shiny::testServer(
+        ComplexHeatmap_HeatmapServer,
+        args = list(data = shiny::reactive(dat), defaults = defaults),
+        {
+            session$setInputs(
+                matrix.cols = sample_cols, rowname.col = "gene",
+                column_key = "sample", row_filter = "", column_filter = "",
+                auto.update = TRUE
+            )
+
+            svg <- attr(session$getReturned(), "vector_svg")(
+                width = 329, height = 399
+            )
+
+            # One user unit is one pixel, so the drawing is on the same canvas
+            # the panel was rendered at.
+            vb <- as.numeric(strsplit(gsub("viewBox='|'", "",
+                regmatches(svg, regexpr("viewBox='[^']+'", svg))), " ")[[1]])
+            expect_equal(vb[3:4], c(329, 399))
+
+            # The matrix cells are the narrow rects the drawing is mostly made
+            # of; their width is what collapses when the canvas is too small.
+            rects <- unlist(regmatches(svg, gregexpr("<rect [^>]*>", svg)))
+            widths <- suppressWarnings(as.numeric(
+                sub(".*width='([0-9.]+)'.*", "\\1", rects)
+            ))
+            widths <- widths[!is.na(widths) & widths < vb[3] / 10]
+            cell <- as.numeric(names(sort(table(widths), decreasing = TRUE))[1])
+
+            # Drawn on the right canvas this is ~7pt; on a 25%-smaller one it
+            # fell below a tenth of a point.
+            expect_gt(cell, 2)
+        }
+    )
+})

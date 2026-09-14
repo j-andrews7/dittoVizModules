@@ -215,24 +215,24 @@ These three arguments compose freely. A typical production pattern is to set def
 ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
-            plotthis_ViolinPlotInputsUI(
-                "v", example_rnaseq,
+            plotthis_BoxPlotInputsUI(
+                "b", example_rnaseq,
                 defaults = list(
-                    x.by     = "condition",
-                    y.by     = "expression",
-                    color.by = "condition"
+                    x.data   = "condition",
+                    y.data   = "log2_cpm",
+                    group.by = "condition"
                 )
             )
         ),
-        mainPanel(plotthis_ViolinPlotOutputUI("v"))
+        mainPanel(plotthis_BoxPlotOutputUI("b"))
     )
 )
 
 server <- function(input, output, session) {
-    plotthis_ViolinPlotServer(
-        "v",
+    plotthis_BoxPlotServer(
+        "b",
         data        = reactive(example_rnaseq),
-        hide.inputs = c("color.by"),
+        hide.inputs = c("group.by"),
         hide.tabs   = c("Plotly", "Lines")
     )
 }
@@ -240,7 +240,7 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 ```
 
-Here `color.by` is fixed to `"condition"` and hidden. The entire `"Plotly"` and `"Lines"` tabs are removed because they aren't relevant to this app.
+Here `group.by` is fixed to `"condition"` and hidden. The entire `"Plotly"` and `"Lines"` tabs are removed because they aren't relevant to this app.
 
 ---
 
@@ -249,9 +249,9 @@ Here `color.by` is fixed to `"condition"` and hidden. The entire `"Plotly"` and 
 Both accept `hide.inputs` and `hide.tabs`, forwarding them to the server if it supports those arguments:
 
 ```{r hide-in-app}
-plotthis_ViolinPlotApp(
-    defaults    = list(x.by = "Species", y.by = "Sepal.Length"),
-    hide.inputs = "color.by",
+plotthis_BoxPlotApp(
+    defaults    = list(x.data = "Species", y.data = "Sepal.Length"),
+    hide.inputs = "group.by",
     hide.tabs   = "Plotly"
 )
 ```

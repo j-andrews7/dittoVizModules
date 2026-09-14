@@ -22,7 +22,8 @@ create_stat_annotations(
   font.size = 12,
   step.increase = 0.06,
   text.bump = 0.04,
-  bracket.inset = 0.025
+  bracket.inset = 0.025,
+  dodge.width = 1
 )
 }
 \arguments{
@@ -70,6 +71,11 @@ text above the bracket line. Default 0.04.}
 \item{bracket.inset}{Numeric; fixed amount to inset each bracket endpoint
 from the group center position. Creates visual separation between
 adjacent brackets at the same y-level. Default 0.025.}
+
+\item{dodge.width}{Numeric; width the \code{group.by} levels at one x category are
+dodged across, matching the dodge the plot was built with. Brackets between
+two \code{group.by} levels are placed on the same slot centres the boxes sit on,
+so this has to be the plot's dodge or they will not line up. Default 1.}
 }
 \value{
 A list with components:

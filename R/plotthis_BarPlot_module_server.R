@@ -258,8 +258,8 @@ plotthis_BarPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
             req(input$y.data %in% names(data()))
             req(input$x.data %in% names(data()))
 
-            group_by_val <- if (nzchar(input$group.by)) input$group.by else NULL
-            fill_by_val <- if (nzchar(input$fill.by)) input$fill.by else NULL
+            group_by_val <- if (.nz_value(input$group.by)) input$group.by else NULL
+            fill_by_val <- if (.nz_value(input$fill.by)) input$fill.by else NULL
 
             # Determine if stacking is happening:
             # Stacked when group.by is numeric OR fill.by is numeric
@@ -283,7 +283,7 @@ plotthis_BarPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
 
 
         observeEvent(input$facet.by, {
-            if (!input$facet.by == "") {
+            if (.nz_value(input$facet.by)) {
                 show_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
             } else {
                 hide_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
@@ -316,7 +316,7 @@ plotthis_BarPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
 
             # Null Values:
             facet.by <- NULL
-            if (!isolate_fn(input$facet.by) == "") {
+            if (.nz_value(isolate_fn(input$facet.by))) {
                 facet.by <- isolate_fn(input$facet.by)
             }
             expand <- waiver()
@@ -324,23 +324,23 @@ plotthis_BarPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
             if (!is.null(expand.input)) {
                 expand <- as.numeric(strsplit(expand.input, ",\\s*")[[1]])
             }
-            if (!is.na(isolate_fn(input$width))) {
+            if (.has_value(isolate_fn(input$width))) {
                 width <- isolate_fn(input$width)
             } else {
                 width <- waiver()
             }
             split.by <- NULL
-            if (!isolate_fn(input$split.by) == "") {
+            if (.nz_value(isolate_fn(input$split.by))) {
                 split.by <- isolate_fn(input$split.by)
             }
             group.by <- NULL
-            if (!isolate_fn(input$group.by) == "") {
+            if (.nz_value(isolate_fn(input$group.by))) {
                 group.by <- isolate_fn(input$group.by)
             }
 
 
             fill_by_input <- isolate_fn(input$fill.by)
-            if (nzchar(fill_by_input)) {
+            if (.nz_value(fill_by_input)) {
                 fill.by <- fill_by_input
                 group.by <- NULL
             } else {
@@ -467,7 +467,9 @@ plotthis_BarPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
             return_empty <- FALSE
             txt <- c()
 
-            if (input$y.data == input$group.by) {
+            # group.by is not req()'d above, so it can still be NULL here; a
+            # bare == against it yields logical(0) and errors the render.
+            if (.nz_value(input$group.by) && input$y.data == input$group.by) {
                 return_empty <- TRUE
                 txt <- c(txt, "Cannot have the y input and group.by be equal. Please change either inputs.")
             }

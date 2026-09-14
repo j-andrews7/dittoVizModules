@@ -186,7 +186,6 @@ Currently, **VizModules** contains a functional Shiny module for the following v
 ### `plotthis`
 
 * `plotthis_AreaPlot` - Stacked area charts (wraps `plotthis::AreaPlot`).
-* `plotthis_ViolinPlot` - Violin plots (wraps `plotthis::ViolinPlot`).
 * `plotthis_BoxPlot` - Box plots (wraps `plotthis::BoxPlot`).
 * `plotthis_BarPlot` - Bar charts (wraps `plotthis::BarPlot`).
 * `plotthis_SplitBarPlot` - Split bar charts (wraps `plotthis::SplitBarPlot`).
@@ -211,11 +210,11 @@ Via direct implementation with plotly.
 
 ## Statistical Testing
 
-The **BoxPlot**, **ViolinPlot**, **yPlot**, and **freqPlot** modules include a **Stats** tab that adds pairwise statistical testing with bracket annotations directly on the plotly figure. On **freqPlot** the tests are always run within each facet (the `stat.per.facet` control is hidden), since each facet is a different level of the frequency variable and pooling across them would compare non-comparable quantities. The underlying helpers (`compute_pairwise_stats()`, `create_stat_annotations()`, `apply_stat_annotations()`, `generate_pair_strings()`, `parse_pair_strings()`) are exported so you can add the same bracket annotations to any custom plotly figure. See [`vignette("statistical-testing", package = "VizModules")`][29].
+The **BoxPlot**, **yPlot**, and **freqPlot** modules include a **Stats** tab that adds pairwise statistical testing with bracket annotations directly on the plotly figure. On **freqPlot** the tests are always run within each facet (the `stat.per.facet` control is hidden), since each facet is a different level of the frequency variable and pooling across them would compare non-comparable quantities. The underlying helpers (`compute_pairwise_stats()`, `create_stat_annotations()`, `apply_stat_annotations()`, `generate_pair_strings()`, `parse_pair_strings()`) are exported so you can add the same bracket annotations to any custom plotly figure. See [`vignette("statistical-testing", package = "VizModules")`][29].
 
 ### Export Summary Data
 
-`collect_source_data()` collects the interactive plot as HTML, its plot data, pairwise testing statistics (if applied), and UI input values into a single list, and `create_source_download_handler()` turns that into a compact zip folder of summary data for the output plot. `create_source_download_handler()` also accepts a named list of summaries (one per plot), which is how the Figure Builder bundles every plot on the canvas into one download.
+`collect_source_data()` collects the interactive plot as HTML, its plot data, pairwise testing statistics (if applied), and UI input values into a single list, and `create_source_download_handler()` turns that into a compact zip folder of summary data for the output plot. The zip also carries an SVG and a PNG of each plot, captured in the browser so they match what is on screen — every reference line, statistical bracket, and dragged annotation included. `create_source_download_handler()` also accepts a named list of summaries (one per plot), which is how the Figure Builder bundles every plot on the canvas into one download.
 
 ### Supported Tests
 
@@ -309,12 +308,6 @@ To contribute a new module to the package, see the vignette for clear guidelines
 
 ![](man/figures/SplitBarPlot.png)
 
-[plotthis_ViolinPlot:][13]
-
-[(Source Plotting Function)][20]
-
-![](man/figures/ViolinPlot.png)
-
 [dittoViz_yPlot:][14]
 
 [(Source Plotting Function)][22]
@@ -395,11 +388,11 @@ Copy the prompt below into your LLM or save it in a file (Copilot, ChatGPT, Clau
 > - Per-function help pages via `?` — e.g. `?dittoViz_scatterPlotInputsUI`, `?plotthis_BarPlotServer`, `?createModuleApp`. Module help pages document exactly which underlying arguments are wired through and any omissions. Cross-reference the underlying plotting docs (`?dittoViz::scatterPlot`, `?plotthis::AreaPlot`, etc.) for the complete parameter set. Browse all docs with `help(package = "VizModules")` or the pkgdown site: <https://j-andrews7.github.io/VizModules/reference/>.
 > - `NEWS.md` (`news(package = "VizModules")`) — newest features and changes.
 >
-> **Available modules:** `dittoViz_scatterPlot`, `dittoViz_yPlot`, `dittoViz_freqPlot`, `plotthis_AreaPlot`, `plotthis_ViolinPlot`, `plotthis_BoxPlot`, `plotthis_BarPlot`, `plotthis_SplitBarPlot`, `plotthis_DensityPlot`, `plotthis_DotPlot`, `plotthis_Histogram`, `ComplexHeatmap_Heatmap`, plus the natively-implemented `linePlot`, `piePlot`, `radarPlot`, `parallelCoordinatesPlot`, and `dumbbellPlot`. Each has a matching `*App()` function (e.g. `plotthis_BarPlotApp()`) you can run to see it in action.
+> **Available modules:** `dittoViz_scatterPlot`, `dittoViz_yPlot`, `dittoViz_freqPlot`, `plotthis_AreaPlot`, `plotthis_BoxPlot`, `plotthis_BarPlot`, `plotthis_SplitBarPlot`, `plotthis_DensityPlot`, `plotthis_DotPlot`, `plotthis_Histogram`, `ComplexHeatmap_Heatmap`, plus the natively-implemented `linePlot`, `piePlot`, `radarPlot`, `parallelCoordinatesPlot`, and `dumbbellPlot`. Each has a matching `*App()` function (e.g. `plotthis_BarPlotApp()`) you can run to see it in action.
 >
 > **Optional building blocks** (inspect their source/help in the installed package's `R/` directory or via `?`):
 > - Data table / filtering module — `?dataFilterUI`, `?dataFilterServer`.
-> - Statistical testing helpers (pairwise + omnibus brackets on plotly figures) — see `?compute_pairwise_stats`, `?apply_stat_annotations`, and the README "Statistical Testing" section; supported by the BoxPlot, ViolinPlot, yPlot, and freqPlot modules.
+> - Statistical testing helpers (pairwise + omnibus brackets on plotly figures) — see `?compute_pairwise_stats`, `?apply_stat_annotations`, and the README "Statistical Testing" section; supported by the BoxPlot, yPlot, and freqPlot modules.
 > - Summary-data export — `?collect_source_data` and `?create_source_download_handler`.
 > - App factory — `?createModuleApp` (every `*App()` is a thin wrapper around it).
 >
@@ -417,7 +410,6 @@ Copy the prompt below into your LLM or save it in a file (Copilot, ChatGPT, Clau
 [9]: https://j-andrews7.github.io/VizModules/reference/radarPlotApp.html
 [10]: https://j-andrews7.github.io/VizModules/reference/dittoViz_scatterPlotApp.html
 [11]: https://j-andrews7.github.io/VizModules/reference/plotthis_SplitBarPlotApp.html
-[13]: https://j-andrews7.github.io/VizModules/reference/plotthis_ViolinPlotApp.html
 [14]: https://j-andrews7.github.io/VizModules/reference/dittoViz_yPlotApp.html
 [15]: https://j-andrews7.github.io/VizModules/reference/plotthis_BarPlotApp.html
 [16]: https://j-andrews7.github.io/VizModules/articles/adding-a-new-module.html

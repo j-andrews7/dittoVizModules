@@ -726,6 +726,73 @@ setup_auto_update_logic <- function(input, params = NULL) {
 }
 
 
+#' The call names a user-typed model formula is allowed to contain
+#'
+#' The formula counterpart to [.expr_allowed_calls()], for the custom fit-line
+#' models in [.safe_build_model()]. A formula needs a different vocabulary --
+#' `~` and the model-building operators, plus the handful of transforms that
+#' routinely appear on the right-hand side -- but it needs the same walker, so
+#' the two lists differ and [.expr_check_node()] does not.
+#'
+#' The same purity bar applies: every entry is a mathematical transform or a
+#' formula operator, with no I/O, environment access, evaluation or assignment.
+#'
+#' @return A character vector of permitted call names.
+#'
+#' @author Jared Andrews
+#' @rdname INTERNAL_formula_allowed_calls
+#' @keywords internal
+.formula_allowed_calls <- function() {
+    c(
+        # Formula and model-building operators
+        "~", "+", "-", "*", "/", "^", "(", ":", "I",
+        # Transforms commonly applied to a term
+        "log", "log2", "log10", "sqrt", "exp", "poly"
+    )
+}
+
+
+#' Has a Shiny input reported an actual value?
+#'
+#' A Shiny input that has not reported yet is `NULL`, and every obvious test
+#' against one is `logical(0)` rather than `FALSE` -- `nzchar(NULL)`,
+#' `NULL == ""`, `is.na(NULL)` alike. `if (logical(0))` is an
+#' `argument is of length zero` error, so each of those reads crashes the
+#' reactive it sits in. Module servers read column and size inputs constantly,
+#' and [viz_select_input()] is a custom binding that reports late, so the empty
+#' value is reachable far more often than it looks.
+#'
+#' @param x A value from a Shiny input.
+#'
+#' @return `TRUE` for a length-1, non-`NA` value; `FALSE` for anything else,
+#'   `NULL` and `character(0)` included.
+#'
+#' @author Jared Andrews
+#' @rdname INTERNAL_has_value
+#' @keywords internal
+.has_value <- function(x) {
+    !is.null(x) && length(x) == 1L && !is.na(x)
+}
+
+
+#' Is an input's value a usable, non-empty string?
+#'
+#' [.has_value()] narrowed to the column-selecting inputs, whose "nothing
+#' chosen" state is the empty string rather than `NULL`.
+#'
+#' @param x A value from a Shiny input.
+#'
+#' @return `TRUE` for a length-1, non-`NA`, non-empty character scalar;
+#'   `FALSE` for anything else, `NULL` included.
+#'
+#' @author Jared Andrews
+#' @rdname INTERNAL_nz_value
+#' @keywords internal
+.nz_value <- function(x) {
+    .has_value(x) && nzchar(x)
+}
+
+
 #' Walk a parsed expression and reject anything outside the allowlist
 #'
 #' The shared guard behind [safe_eval_filter()] and [validate_expression()].
@@ -740,13 +807,18 @@ setup_auto_update_logic <- function(input, params = NULL) {
 #'
 #' @param node A node of a parsed expression, as from [parse()].
 #' @param col_names Character vector of column names the expression may refer to.
+#' @param allowed Character vector of permitted call names. Defaults to
+#'   [.expr_allowed_calls()], the filter/highlight vocabulary; model formulas
+#'   pass [.formula_allowed_calls()] instead. The vocabulary is the only thing
+#'   that varies between the two -- the walking and the rejection rules are
+#'   deliberately shared.
 #'
 #' @return `TRUE` if every node is permitted, `FALSE` otherwise.
 #'
 #' @author Jared Andrews
 #' @rdname INTERNAL_expr_check_node
 #' @keywords internal
-.expr_check_node <- function(node, col_names) {
+.expr_check_node <- function(node, col_names, allowed = .expr_allowed_calls()) {
     if (is.atomic(node) || is.null(node)) {
         return(TRUE)
     }
@@ -763,18 +835,21 @@ setup_auto_update_logic <- function(input, params = NULL) {
         if (!is.symbol(fn)) {
             return(FALSE)
         }
-        if (!as.character(fn) %in% .expr_allowed_calls()) {
+        if (!as.character(fn) %in% allowed) {
             return(FALSE)
         }
         for (i in seq_along(node)[-1]) {
-            if (!.expr_check_node(node[[i]], col_names)) {
+            if (!.expr_check_node(node[[i]], col_names, allowed)) {
                 return(FALSE)
             }
         }
         return(TRUE)
     }
     if (is.pairlist(node)) {
-        return(all(vapply(node, .expr_check_node, logical(1), col_names = col_names)))
+        return(all(vapply(
+            node, .expr_check_node, logical(1),
+            col_names = col_names, allowed = allowed
+        )))
     }
     FALSE
 }
@@ -813,6 +888,15 @@ safe_eval_filter <- function(expr_text, data) {
     parsed <- tryCatch(parse(text = expr_text), error = function(e) NULL)
     if (is.null(parsed) || length(parsed) == 0) {
         warning("Could not parse filter expression.")
+        return(NULL)
+    }
+
+    # One statement only. Checking parsed[[1L]] and evaluating the same node is
+    # safe, but it silently throws away everything after a `;` or a newline --
+    # so a two-clause filter would quietly return the mask for its first clause
+    # alone. Saying so beats guessing on the user's behalf.
+    if (length(parsed) > 1) {
+        warning("Filter expression must be a single statement.")
         return(NULL)
     }
 
@@ -908,6 +992,16 @@ validate_expression <- function(expr_text, col_names) {
     parsed <- tryCatch(parse(text = expr_text), error = function(e) NULL)
     if (is.null(parsed) || length(parsed) == 0) {
         warning("Could not parse expression.")
+        return(NULL)
+    }
+
+    # One statement only, and this one is load-bearing: unlike
+    # safe_eval_filter(), which evaluates the node it checked, this returns the
+    # *original string* for a caller to evaluate. Checking parsed[[1L]] and
+    # handing back the whole text would let everything after a `;` through
+    # entirely unexamined.
+    if (length(parsed) > 1) {
+        warning("Expression must be a single statement.")
         return(NULL)
     }
 

@@ -548,7 +548,10 @@
 #' @keywords internal
 #' @rdname INTERNAL_safe_build_model
 .safe_build_model <- function(formula_text, data, fit_fn_name, ...) {
-    if (is.null(formula_text) | is.null(data) | !nzchar(trimws(formula_text))) {
+    # `||`, not `|`: with a NULL formula_text the third operand is logical(0),
+    # and a vectorized `|` propagates that into `if`, which errors instead of
+    # taking the documented NULL return.
+    if (is.null(formula_text) || is.null(data) || !nzchar(trimws(formula_text))) {
         return(NULL)
     }
 
@@ -572,26 +575,13 @@
         return(NULL)
     }
 
-    allowed_calls <- c("~", "+", "-", "*", "/", "^", "(", ":", "I",
-                        "log", "log2", "log10", "sqrt", "exp", "poly")
-    col_names <- names(data)
-
-    .check_node <- function(node) {
-        if (is.atomic(node) || is.null(node)) return(TRUE)
-        if (is.symbol(node)) {
-            nm <- as.character(node)
-            return(nm %in% col_names ||
-                nm %in% c("TRUE", "FALSE", "NA", "Inf", "T", "F"))
-        }
-        if (is.call(node)) {
-            fn <- as.character(node[[1]])
-            if (!fn %in% allowed_calls) return(FALSE)
-            return(all(vapply(as.list(node)[-1], .check_node, logical(1))))
-        }
-        FALSE
-    }
-
-    if (!.check_node(expr)) {
+    # The walker is shared with safe_eval_filter() / validate_expression();
+    # only the vocabulary differs. This function used to carry its own copy,
+    # which drifted: it flattened a call in function position with
+    # as.character(), so `y ~ base::log(x)` produced a length-3 vector and an
+    # "argument is of length zero" error rather than a clean rejection, while
+    # `y ~ log()(x)` flattened to "log" and was accepted.
+    if (!.expr_check_node(expr, names(data), .formula_allowed_calls())) {
         warning("Formula contains disallowed terms. Only data columns and ",
                 "basic math/transform functions are permitted.")
         return(NULL)

@@ -416,7 +416,8 @@ dittoViz_yPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL,
             .stat_bracket_headroom(
                 df = stats.data, x = xvar, y = yvar,
                 group.by = grp_var, facet.by = facet.var,
-                per.facet = per.facet, input = input
+                per.facet = per.facet, input = input,
+                dodge.width = 1 - .box_num(input$boxgap, 0.3)
             )
         }
 
@@ -592,6 +593,11 @@ dittoViz_yPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL,
             # annotation column has to be carried in it.
             hover.data <- unique(c(hover.data, annotate.by))
 
+            # One dodge width for the whole figure: the ggplot layers below, the box
+            # traces afterwards, and the stat brackets all have to agree on it.
+            boxgap <- .box_num(isolate_fn(input$boxgap), 0.3)
+            boxgroupgap <- .box_num(isolate_fn(input$boxgroupgap), 0.2)
+
             p <- .with_stable_seed(yPlot(
                 data_frame = data(),
                 var = y.vars,
@@ -628,7 +634,7 @@ dittoViz_yPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL,
                 jitter.color = isolate_fn(input$jitter.color),
                 jitter.shape.legend.size = isolate_fn(input$jitter.shape.legend.size),
                 jitter.shape.legend.show = isolate_fn(input$jitter.shape.legend.show),
-                jitter.position.dodge = 1 - isolate_fn(input$boxgap),
+                jitter.position.dodge = 1 - boxgap,
                 boxplot.color = isolate_fn(input$boxplot.color),
                 # Hide outliers when jitter points are shown (to avoid
                 # double-plotting) or when the user disables them. dittoViz::yPlot
@@ -639,7 +645,7 @@ dittoViz_yPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL,
                 boxplot.lineweight = isolate_fn(input$boxplot.lineweight),
                 vlnplot.lineweight = isolate_fn(input$vlnplot.lineweight),
                 vlnplot.scaling = isolate_fn(input$vlnplot.scaling),
-                vlnplot.width = 1 - isolate_fn(input$boxgap),
+                vlnplot.width = 1 - boxgap,
                 ridgeplot.lineweight = isolate_fn(input$ridgeplot.lineweight),
                 ridgeplot.scale = isolate_fn(input$ridgeplot.scale),
                 ridgeplot.ymax.expansion = ridgeplot.ymax.expansion,
@@ -650,20 +656,7 @@ dittoViz_yPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL,
                 theme = theme_style
             ))
 
-            # Several Y variables mapped onto the group or color aesthetic are always
-            # drawn side by side, so the boxes must be dodged rather than overlaid.
-            boxmode <- if (multivar && multivar.aes != "split") {
-                "group"
-            } else {
-                ifelse(!color.by == isolate_fn(input$group.by), "group", "overlay")
-            }
-
-            fig <- p |>
-                layout(
-                    boxmode = boxmode,
-                    boxgap = isolate_fn(input$boxgap),
-                    boxgroupgap = isolate_fn(input$boxgroupgap)
-                )
+            fig <- p
             if (faceted) {
                 fig <- apply_facet_subplot_spacing(
                     fig,
@@ -678,10 +671,16 @@ dittoViz_yPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL,
             
 
 
-            # Fix boxplot positioning across faceted subplots
-            if (faceted) {
-                fig <- .fix_boxplot_facet_positions(fig)
-            }
+            # Put the boxes back on the coordinates ggplot dodged them to, which is
+            # where the jitter and violin traces already are. The dodge width has to
+            # be the one yPlot() built the ggplot with: boxplot.position.dodge and
+            # jitter.position.dodge both default to vlnplot.width, which is
+            # passed as 1 - boxgap above.
+            fig <- .align_box_positions(
+                fig,
+                dodge.width = 1 - boxgap,
+                box.width = 1 - boxgroupgap
+            )
 
             # Apply axis styling (borders handled at the ggplot level via theme_style above)
             xaxis_style <- create_axis_styles(input, axis_side = "x", isolate_fn = isolate_fn)
@@ -762,7 +761,10 @@ dittoViz_yPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL,
                     group.by = grp_var, facet.by = facet.var,
                     step.increase = isolate_fn(input$stat.step.increase),
                     text.bump = isolate_fn(input$stat.text.bump),
-                    bracket.inset = isolate_fn(input$stat.bracket.inset)
+                    bracket.inset = isolate_fn(input$stat.bracket.inset),
+                    # Brackets between two groups sit on the same slot centres
+                    # .align_box_positions() puts the boxes on.
+                    dodge.width = 1 - boxgap
                 )
 
                 # An active adjustment lets the axis auto-scale, so there are no

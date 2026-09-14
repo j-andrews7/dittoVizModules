@@ -48,12 +48,19 @@ reactive**, so in an app you can often just capture the server's return value in
 building your own:
 
 ```r
-src <- plotthis_ViolinPlotServer("v", data = reactive(example_rnaseq))
-output$dl <- create_source_download_handler(src, filename_base = "violin_source")
+src <- plotthis_BoxPlotServer("b", data = reactive(example_rnaseq))
+output$dl <- create_source_download_handler(src, filename_base = "box_source")
 ```
 
 Every module already shows a **Source Download** button in its control block (the
 "tack" that `module_tack_ui()` appends alongside Auto Update / Update / Reset), which
-downloads the plot as self-contained HTML plus the source data and stats as CSVs. A
-bespoke button is only needed when you want to bundle several plots, rename the file, or
-put the control somewhere else in your layout.
+downloads the plot as self-contained HTML, as an SVG and a PNG, plus the source data and
+stats as CSVs. A bespoke button is only needed when you want to bundle several plots,
+rename the file, or put the control somewhere else in your layout.
+
+The images are captured in the browser off the live graph, which needs the markup
+`module_tack_ui()` puts on its button (the `viz-source-download` class and a
+`data-viz-source-ns` attribute naming the module). A hand-rolled `downloadButton()`
+without it still downloads everything else; to get images too, copy that markup. A module
+whose output is not a plotly graph supplies its own instead, via `vector_svg` /
+`raster_png` functions on its summary list -- see `draw_to_svg()` and `draw_to_png()`.

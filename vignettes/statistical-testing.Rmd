@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-The **BoxPlot**, **ViolinPlot**, and **yPlot** modules include a **Stats** tab that adds pairwise statistical test results as bracket annotations directly on the plotly figure. The same helpers are exported so you can add bracket annotations to any custom plotly figure.
+The **BoxPlot**, **yPlot**, and **freqPlot** modules include a **Stats** tab that adds pairwise statistical test results as bracket annotations directly on the plotly figure. The same helpers are exported so you can add bracket annotations to any custom plotly figure.
 
 ## Using the Stats tab
 

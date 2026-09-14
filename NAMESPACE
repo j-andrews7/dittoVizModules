@@ -6,6 +6,7 @@ export(ComplexHeatmap_HeatmapInputsUI)
 export(ComplexHeatmap_HeatmapMainOutputUI)
 export(ComplexHeatmap_HeatmapOutputUI)
 export(ComplexHeatmap_HeatmapServer)
+export(ComplexHeatmap_HeatmapStaticOutputUI)
 export(ComplexHeatmap_HeatmapSubOutputUI)
 export(add_ablines)
 export(add_hlines)
@@ -49,6 +50,8 @@ export(dittoViz_yPlotApp)
 export(dittoViz_yPlotInputsUI)
 export(dittoViz_yPlotOutputUI)
 export(dittoViz_yPlotServer)
+export(draw_to_png)
+export(draw_to_svg)
 export(dumbbellPlot)
 export(dumbbellPlotApp)
 export(dumbbellPlotInputsUI)
@@ -117,10 +120,6 @@ export(plotthis_SplitBarPlotApp)
 export(plotthis_SplitBarPlotInputsUI)
 export(plotthis_SplitBarPlotOutputUI)
 export(plotthis_SplitBarPlotServer)
-export(plotthis_ViolinPlotApp)
-export(plotthis_ViolinPlotInputsUI)
-export(plotthis_ViolinPlotOutputUI)
-export(plotthis_ViolinPlotServer)
 export(radarPlot)
 export(radarPlotApp)
 export(radarPlotInputsUI)
@@ -207,7 +206,10 @@ importFrom(htmlwidgets,
   onRender,
   saveWidget
 )
-importFrom(jsonlite,toJSON)
+importFrom(jsonlite,
+  base64_dec,
+  toJSON
+)
 importFrom(methods,is)
 importFrom(plotly,
   ggplotly,
@@ -221,8 +223,7 @@ importFrom(plotthis,
   DensityPlot,
   DotPlot,
   Histogram,
-  SplitBarPlot,
-  ViolinPlot
+  SplitBarPlot
 )
 importFrom(readxl,read_excel)
 importFrom(roclang,extract_roc_text)
@@ -237,6 +238,7 @@ importFrom(shiny,
   checkboxInput,
   downloadButton,
   downloadHandler,
+  getDefaultReactiveDomain,
   icon,
   is.reactive,
   isolate,
@@ -292,6 +294,7 @@ importFrom(tools,
 )
 importFrom(utils,
   combn,
+  getFromNamespace,
   modifyList,
   read.csv,
   read.delim,

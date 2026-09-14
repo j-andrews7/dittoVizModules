@@ -102,7 +102,8 @@
 #' @section Parameters controlling additional functionality:
 #' The following parameters implementing new functionality or controlling plotly-specific features are also available:
 #'
-#' - `boxmode` - Boxplot mode grouping (calculated: "group" or "overlay" based on color.by)
+#' - `boxmode` - Always "overlay": the boxes carry explicit x positions matching
+#'   ggplot's dodge, so plotly.js is not asked to dodge them
 #' - `boxgap` - Boxplot position dodge (UI: "Boxplot Position Dodge", default: 0.3)
 #' - `boxgroupgap` - Boxplot group dodge (UI: "Boxplot Group Dodge", default: 0.2)
 #' - `title.font.size` - Plot title font size (UI: "Title Size", default: 26)

@@ -339,7 +339,7 @@ plotthis_SplitBarPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs 
 
 
         observeEvent(input$facet.by, {
-            if (!input$facet.by == "") {
+            if (.nz_value(input$facet.by)) {
                 show_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
             } else {
                 hide_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
@@ -362,16 +362,16 @@ plotthis_SplitBarPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs 
 
             # Null Values:
             facet.by <- NULL
-            if (!isolate_fn(input$facet.by) == "") {
+            if (.nz_value(isolate_fn(input$facet.by))) {
                 facet.by <- isolate_fn(input$facet.by)
             }
 
             split.by <- NULL
-            if (!isolate_fn(input$split.by) == "") {
+            if (.nz_value(isolate_fn(input$split.by))) {
                 split.by <- isolate_fn(input$split.by)
             }
             fill.by <- NULL
-            if (!isolate_fn(input$fill.by) == "") {
+            if (.nz_value(isolate_fn(input$fill.by))) {
                 fill.by <- isolate_fn(input$fill.by)
             }
 
@@ -405,7 +405,7 @@ plotthis_SplitBarPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs 
             }
 
             alpha.by <- NULL
-            if (!isolate_fn(input$alpha.by) == "") {
+            if (.nz_value(isolate_fn(input$alpha.by))) {
                 alpha.by <- isolate_fn(input$alpha.by)
             }
 

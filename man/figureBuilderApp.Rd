@@ -15,7 +15,10 @@ figureBuilderApp(
 \item{data_list}{An optional named list of data frames that seed the dataset
 registry. If \code{NULL} (the default), the bundled example datasets (plus a
 \code{sales_by_product} summary suited to the pie plot) are used. At least one
-element is required and every element must be a data frame.}
+element is required. An element is either a data frame, or a named list of
+data frames for a module that needs companion tables (the \code{ComplexHeatmap}
+module's \code{list(matrix = , column_annotations = )}); in the latter case only
+the primary table is filtered and shown in the panel's table pane.}
 
 \item{module_registry}{An optional named list describing the plot modules to
 offer. If \code{NULL} (the default), all bundled VizModules modules are offered.
@@ -23,7 +26,13 @@ Each entry is itself a list with components: \code{label} (character, shown in t
 picker), \code{dataset} (character, the dataset name its \code{defaults} were written
 for), \code{inputs_ui}, \code{output_ui}, and \code{server_fn} (the module's three
 functions), and \code{defaults} (a named list of input defaults applied only when
-\code{dataset} is the chosen dataset).}
+\code{dataset} is the chosen dataset). An entry may also carry \code{primary.table},
+naming which table of a multi-table dataset gets filtered (the first by
+default); its presence is also what marks the module as able to take a
+multi-table dataset at all, so modules without it are handed the primary
+table alone and any dataset stays usable with any module. See
+\code{\link[=figureBuilderServer]{figureBuilderServer()}} for the \code{vector_svg} hook that lets a non-plotly
+module take part in the SVG figure export.}
 
 \item{title}{A character string used as the page title and header
 (default: \code{"VizModules Figure Builder"}).}

@@ -36,6 +36,10 @@ figureBuilderUI <- function(id, title = "VizModules Figure Builder") {
     tagList(
         shinyjs::useShinyjs(),
         tags$head(tags$style(.figure_builder_css()), tags$script(.figure_builder_js())),
+        # The builder's own Source Data & Plots button needs the image capture
+        # too, and the canvas starts empty, so it cannot wait to arrive with the
+        # first panel's module_tack_ui().
+        .source_export_dependency(),
         if (!is.null(title)) titlePanel(title),
         sidebarLayout(
             sidebarPanel(
@@ -51,11 +55,18 @@ figureBuilderUI <- function(id, title = "VizModules Figure Builder") {
                         6,
                         tipify(
                             downloadButton(ns("download.source"), "Source Data & Plots",
-                                class = "btn-primary btn-block"
+                                class = "btn-primary btn-block viz-source-download",
+                                `data-viz-source-ns` = ns(""),
+                                # Unlike a single module's button, this one wants
+                                # an image per card. Naming the canvas keeps two
+                                # Figure Builders on one page from photographing
+                                # each other's panels.
+                                `data-viz-canvas` = ns("pb_canvas")
                             ),
                             paste(
-                                "Download a ZIP of the source data, HTML plots, and",
-                                "statistics (if applied) for all plots on the canvas."
+                                "Download a ZIP of the source data, HTML plots,",
+                                "SVG and PNG images, and statistics (if applied)",
+                                "for all plots on the canvas."
                             ),
                             options = list(container = "body")
                         )
@@ -155,6 +166,6 @@ figureBuilderUI <- function(id, title = "VizModules Figure Builder") {
                     )
                 )
             )
-        )
+        ) |> tagAppendAttributes(class = "pb-app")
     )
 }

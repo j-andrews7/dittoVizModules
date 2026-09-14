@@ -31,7 +31,7 @@ Four exports per module: `<name>InputsUI()`, `<name>OutputUI()`, `<name>Server()
 If you are adding a brand-new plotting function, define, document, and test **that**
 first. Only wrap it once it is stable.
 
-## The seven things that are easy to get wrong
+## The eight things that are easy to get wrong
 
 1. **Three roxygen `@section` blocks on the UI function** are mandatory: parameters not implemented, parameters and defaults, parameters implementing new functionality. See `references/roxygen-sections.md`.
 2. **Reactive defaults**: `params <- setup_reactive_defaults(defaults, input, session)` must be the *first* statement of the `moduleServer()` body, and `isolate_fn <- setup_auto_update_logic(input, params)` the first line of the generate reactive. Every read must stay in the literal `isolate_fn(input$key)` form — `isolate_fn(as.numeric(input$size))` cannot be recognised and silently loses reactive-default support. Convert outside the call.
@@ -40,6 +40,7 @@ first. Only wrap it once it is stable.
 5. **Debounce any free-text input the plot reads.** `textInput()` reports on every keystroke, so an undebounced read rebuilds the plot once per character — and for an expression input, most of those characters are a state that cannot parse. `debounce(reactive(input$key), 700)`, created once in the server body. It emits its initial value immediately, so startup is unaffected. Select/numeric/checkbox inputs report discrete choices and need nothing.
 6. **Never `eval(parse())` / `eval(str2expression())` on user input.** Use `safe_eval_filter()`, `validate_expression()`, or `safe_resolve_adj_fxn()`. A publicly deployed app otherwise executes arbitrary code.
 7. **Reuse the uniform input helpers** rather than writing your own Axes/Legend/Lines/Plotly controls. See `references/uniform-helpers.md`.
+8. **Any CSS you add lands in the host app's document.** There is no scoping, and every module pulls a colour picker in, so one bare selector against a Bootstrap/selectize/DT class restyles apps that merely embedded a plot. Anchor every rule on a class this package invented. See `references/css-containment.md`.
 
 ## Before you write anything: what shape is the plot function?
 
@@ -81,7 +82,7 @@ unverified rather than chasing it.
 
 ## Finishing
 
-- Register the module in `inst/apps/module-gallery/app.R` (its own tab, small sample dataset).
+- Register the module in `inst/apps/module-gallery/app.R` (its own tab, small sample dataset) **and** in `.figure_builder_registry()` (`R/figureBuilder_module_app.R`) — two registries, different shapes.
 - Add `tests/testthat/test-<plot>.R`; cover a new plotting function directly, and the module with `testServer` where feasible.
 - Add the exports to `_pkgdown.yml` and an entry to `NEWS.md`.
 - Run `devtools::document()`, then `devtools::test()` and `devtools::check()`.

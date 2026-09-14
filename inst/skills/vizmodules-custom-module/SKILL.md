@@ -104,7 +104,7 @@ observeEvent(input$stat.x, {
 
 - **Manual layout edits** on a hand-rolled plotly output — two calls, `setup_manual_edits()` and `finalize_manual_edits()`. Inherited for free if you delegate to a base module. See `references/manual-edits.md`.
 - **Model-line backends** — `register_model_backend(name, backend)` adds a fitting engine to the scatter module's Model Type dropdown. See `references/model-backends.md`.
-- **Widgets** — `multiColorPicker()` and `multiDynamicInput()` are exported and usable in any Shiny app. See `references/custom-inputs.md`.
+- **Widgets** — `multiColorPicker()` and `multiDynamicInput()` are exported and usable in any Shiny app. See `references/custom-inputs.md`, which also covers styling a widget of your own: a stylesheet goes into the *host* document unscoped, so every selector must be anchored on a class you invented.
 - **Runtime show/hide** — `hide_input(session, ids)` / `show_input(session, ids)`, not `shinyjs::hide()`; the VizModules helpers reflow the grid.
 - **User-typed expressions** — `safe_eval_filter()`, `validate_expression()`, `safe_resolve_adj_fxn()`. Never `eval(parse())` on user input.
 
@@ -153,3 +153,4 @@ client, such as a `plotlyProxy()` interaction.
 3. Pass data in as a `reactive()`, and return one where it is useful.
 4. Base module servers return their source-data reactive — capture it if your wrapper needs to expose downloads.
 5. If inputs seem to have no effect, it is the namespace rule. It is almost always the namespace rule.
+6. If an *unrelated* control in your app starts rendering oddly once a module is on the page, suspect CSS rather than data — the package's stylesheets load into your document. See the styling section of `references/custom-inputs.md`.

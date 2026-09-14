@@ -52,6 +52,7 @@ Suggests:
     InteractiveComplexHeatmap,
     circlize,
     grid,
+    svglite,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

@@ -132,8 +132,17 @@ plotted data, stats, UI inputs, and the rendered plot, and `create_source_downlo
 to turn that record into a downloadable `.zip`. `collect_source_data()`
 requires a reactive plotly plot; the output summary can be optionally enriched by
 both a stats reactive and a UI inputs reactive. `create_source_download_handler()` also accepts
-a named list of summaries (one per plot), which is how the Panel Builder bundles
+a named list of summaries (one per plot), which is how the Figure Builder bundles
 every plot on its canvas into a single download.
+
+The `.zip` also carries an SVG and a PNG of each plot. Those are photographed in
+the browser, off the graph the user is looking at, so they match it exactly --
+including everything applied after the figure was built, such as reference
+lines, statistical brackets and dragged annotations. A module whose output is
+not a plotly graph has nothing to photograph and supplies its own instead, by
+putting a `vector_svg` and/or `raster_png` function of `(width, height, res)` on
+its summary list; `draw_to_svg()` and `draw_to_png()` build one from any grid or
+base drawing.
 
 ```{r data-summary}
 

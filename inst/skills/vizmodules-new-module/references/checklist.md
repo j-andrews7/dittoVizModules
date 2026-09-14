@@ -64,12 +64,27 @@ else — `system()`, `file.remove()`, `library()` — is rejected with a warning
 `safe_resolve_adj_fxn()` additionally allows only `log2`, `log`, `log10`, `neg_log10`,
 `log1p`, `as.factor`, `abs`, `sqrt`.
 
-## App and gallery
+## App, gallery and figure builder
 
 - [ ] `<module>App()` is a thin `createModuleApp()` wrapper — no duplicated import, filtering, or dataset-switching logic.
 - [ ] A sensible bundled example dataset as the default `data_list`.
 - [ ] The module added to `inst/apps/module-gallery/app.R` in its own tab with a small sample dataset.
+- [ ] The module added to `.figure_builder_registry()` in `R/figureBuilder_module_app.R` — a *second* registry, easily missed, with its own shape (`label`, `dataset`, the trio, `defaults`).
+- [ ] A module whose output is not plotly supplies `vector_svg` and `raster_png` functions of `(width, height, res)` -- on the summary list for the source download's images, and `vector_svg` also as an attribute on the reactive for the Figure Builder's canvas export -- or its panels export as a bare label and its archive carries no picture (see `ComplexHeatmap_HeatmapServer()`, `draw_to_svg()` and `draw_to_png()`).
 - [ ] An example that uses the module **twice** to prove multi-instance behaviour; each instance holds independent state.
+
+## CSS (only if you added any)
+
+See `css-containment.md`. Skip this section entirely if you wrote no stylesheet and no
+`tags$style()` block.
+
+- [ ] Every selector is anchored on a class this package invented (`.mc-`, `.mdi-`, `.vizmodules-`, `.viz-`, `.pb-`, …). Nothing bare against `.selectize-dropdown`, `.option`, `.well`, `.nav-tabs`, `.form-group`, `.control-label`, `.btn` or any other Bootstrap/Shiny/selectize/DT class — those reach the whole host page.
+- [ ] Anything parented to `<body>` (a dropdown, a popover) carries its own marker class, since a `.my-widget .thing` selector cannot reach it.
+- [ ] Each selector verified against the rendered DOM — a rule targeting a class your widget never emits does nothing for you and everything to everyone else.
+- [ ] No layout in inline `style=`; per-instance values passed as CSS custom properties instead.
+- [ ] No dependence on the parent's padding (no Bootstrap negative-margin rows); `gap` for spacing, `min-width: 0` on flex children.
+- [ ] Stylesheet in `inst/src/`, served by an `htmlDependency()`, attached to the widget's markup with `attachDependencies()` so it survives `insertUI()`.
+- [ ] The containment test in `tests/testthat/test-ui_utils.R` passes, with your prefix added to its owned list.
 
 ## Tests
 

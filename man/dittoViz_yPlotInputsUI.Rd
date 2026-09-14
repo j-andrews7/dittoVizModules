@@ -133,7 +133,8 @@ empty uses a sensible default set of columns)
 
 The following parameters implementing new functionality or controlling plotly-specific features are also available:
 \itemize{
-\item \code{boxmode} - Boxplot mode grouping (calculated: "group" or "overlay" based on color.by)
+\item \code{boxmode} - Always "overlay": the boxes carry explicit x positions matching
+ggplot's dodge, so plotly.js is not asked to dodge them
 \item \code{boxgap} - Boxplot position dodge (UI: "Boxplot Position Dodge", default: 0.3)
 \item \code{boxgroupgap} - Boxplot group dodge (UI: "Boxplot Group Dodge", default: 0.2)
 \item \code{title.font.size} - Plot title font size (UI: "Title Size", default: 26)

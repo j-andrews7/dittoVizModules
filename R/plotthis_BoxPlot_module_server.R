@@ -241,7 +241,8 @@ plotthis_BoxPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
                 group.by = .blank_to_null(input$group.by, data(), numeric_is_null = TRUE),
                 facet.by = .blank_to_null(input$facet.by),
                 per.facet = isTRUE(input$stat.per.facet),
-                input = input
+                input = input,
+                dodge.width = .PLOTTHIS_DODGE_WIDTH
             )
         }
 
@@ -277,7 +278,7 @@ plotthis_BoxPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
         )
 
         observeEvent(input$facet.by, {
-            if (!input$facet.by == "") {
+            if (.nz_value(input$facet.by)) {
                 show_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
             } else {
                 hide_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
@@ -292,17 +293,17 @@ plotthis_BoxPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
 
             # Facet By Null option Upstream:
             facet.by <- NULL
-            if (!isolate_fn(input$facet.by) == "") {
+            if (.nz_value(isolate_fn(input$facet.by))) {
                 update_viz_select(session, "sort_x", selected = "") # Makes sure order x is not active when facet by is active
                 facet.by <- isolate_fn(input$facet.by)
             }
 
             group.by <- NULL
-            if (!isolate_fn(input$group.by) == "") {
+            if (.nz_value(isolate_fn(input$group.by))) {
                 group.by <- isolate_fn(input$group.by)
             }
             sort.x <- NULL
-            if (!isolate_fn(input$sort_x) == "") {
+            if (.nz_value(isolate_fn(input$sort_x))) {
                 sort.x <- isolate_fn(input$sort_x)
             }
             highlight <- validate_expression(isolate_fn(input$highlight), names(data()))
@@ -366,15 +367,15 @@ plotthis_BoxPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
             if (isolate_fn(input$add.points) || !isolate_fn(input$show.outliers)) {
                 p <- p + geom_boxplot(outlier.shape = NA)
             }
-            fig <- ggplotly(p) |>
-                layout(
-                    boxmode = ifelse(!is.null(group.by), "group", "overlay"),
-                    boxgap = 0.1,
-                    boxgroupgap = 1 - isolate_fn(input$boxplot.width)
-                )
-            # Fix boxplot positioning across faceted subplots
+            fig <- ggplotly(p)
+            # Put the boxes back on the coordinates ggplot dodged them to, which is
+            # where the jitter points already are.
+            fig <- .align_box_positions(
+                fig,
+                dodge.width = .PLOTTHIS_DODGE_WIDTH,
+                box.width = .box_num(isolate_fn(input$boxplot.width), 0.8)
+            )
             if (!is.null(facet.by) && nzchar(facet.by)) {
-                fig <- .fix_boxplot_facet_positions(fig)
                 fig <- apply_facet_subplot_spacing(
                     fig,
                     spacing = c(isolate_fn(input$subplot.margin.x), isolate_fn(input$subplot.margin.y)),
@@ -419,7 +420,10 @@ plotthis_BoxPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
                     group.by = group.by, facet.by = facet.by,
                     step.increase = isolate_fn(input$stat.step.increase),
                     text.bump = isolate_fn(input$stat.text.bump),
-                    bracket.inset = isolate_fn(input$stat.bracket.inset)
+                    bracket.inset = isolate_fn(input$stat.bracket.inset),
+                    # Brackets between two groups sit on the same slot centres
+                    # .align_box_positions() puts the boxes on.
+                    dodge.width = .PLOTTHIS_DODGE_WIDTH
                 )
 
                 fig <- apply_stat_annotations(

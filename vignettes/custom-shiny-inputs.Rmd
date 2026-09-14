@@ -263,3 +263,85 @@ In practice you don't build this manually — `build_model_row_spec()` does it f
 - `input[[inputId]]` — read the named list of rows in your server
 - `updateMultiDynamicInput()` — set or clear rows from the server
 - `build_model_row_spec()` — auto-build a row_spec from registered model backends
+
+# Writing Your Own Custom Input
+
+Both widgets above follow the same shape, and it is the one to copy if you add a third:
+a constructor in `R/`, a JS binding and a stylesheet in `inst/src/`, and an
+`htmlDependency()` tying them together.
+
+## Styling: the rule that matters most
+
+**A custom input's stylesheet is injected into the host app's document.** There is no
+shadow DOM and no automatic scoping, so a rule written for your widget applies to the whole
+page. Since every plot module renders a `multiColorPicker`, attaching any module to an app
+brings these stylesheets along — which is how a single unscoped selector came to break
+stock `selectInput()` dropdowns in apps that never used the picker directly (#355).
+
+Anchor every selector on a class you invented:
+
+```css
+/* WRONG — `.selectize-dropdown`, `.option` and `.optgroup-header` all belong to
+   selectize, so this restyles every dropdown on the page, including plain
+   selectInput()s and DT's column filters. */
+.selectize-dropdown .selectize-dropdown-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* RIGHT */
+.mc-palette-dropdown .selectize-dropdown-content {
+  display: flex;
+  flex-direction: column;
+}
+```
+
+The mistake is easy to make because the wrong version *looks* scoped — a two-part selector
+reads like "the content inside my dropdown". The test is the **leftmost** class: if you did
+not invent it, the rule is not scoped.
+
+## Widgets that escape their container
+
+A dropdown or popover often has to be parented to `<body>` so a panel with `overflow:
+hidden` cannot clip it. That is precisely what makes it unreachable from a
+`.my-widget .thing` selector — and precisely why the leaking rules above were written
+unscoped. The answer is to give the escaped element its own class:
+
+```js
+$(select).selectize({
+  dropdownParent: "body",
+  // Selectize replaces its default dropdownClass wholesale, so restate its own
+  // class alongside ours.
+  dropdownClass: "selectize-dropdown mc-palette-dropdown",
+  ...
+});
+```
+
+`multiColorPicker` does exactly this, which is why `multiColorPicker.css` can scope all
+fourteen of its dropdown rules to `.mc-palette-dropdown`.
+
+## Confirm your selectors actually match
+
+Before trusting a rule, inspect the element and check the class is really on it. One of the
+picker's rules targeted `.option`, but its custom `render.option` emits
+`.mc-palette-option` and selectize never adds `.option` to it — so the rule matched nothing
+in the picker and *only* affected other widgets.
+
+## Other practices worth copying
+
+- **Keep layout out of inline `style=` attributes.** They can only be overridden with
+  `!important`. Put layout in the stylesheet and pass per-instance values as CSS custom
+  properties (`style = "--my-columns: 3;"`).
+- **Do not depend on the parent's padding.** Bootstrap's negative-margin row idiom breaks
+  in any container with less padding than it assumes; `gap` needs nothing from the parent.
+- **Give flex children `min-width: 0`**, or long content refuses to shrink and pushes the
+  widget wider than its container.
+- **Let every row wrap.** These widgets land in sidebars of any width, so controls that
+  cannot shrink past a fixed width spill out instead of reflowing.
+- **Ship the CSS through an `htmlDependency()`** pointing at `inst/src/`, attached to the
+  widget's own markup with `htmltools::attachDependencies()`, so the styles travel with it
+  through a runtime `insertUI()`.
+
+`tests/testthat/test-ui_utils.R` parses every selector in every stylesheet the package
+ships — bundled files and inline `<style>` blocks alike — and fails on any that is not
+anchored to a package-owned prefix. Add yours to that list when you introduce a widget.

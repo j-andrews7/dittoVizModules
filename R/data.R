@@ -60,8 +60,8 @@
 #' Example sales dataset
 #'
 #' A simulated product-sales dataset (720 rows total).
-#' Designed to showcase bar, box, violin,
-#' area, line, scatter, split-bar, density, and histogram plot modules.
+#' Designed to showcase bar, box, area, line, scatter,
+#' split-bar, density, and histogram plot modules.
 #'
 #' @format A data frame with 720 rows and 7 columns:
 #' \describe{
@@ -83,7 +83,7 @@
 #' Example demographics dataset
 #'
 #' A simulated employee survey dataset with 500 rows spanning six departments
-#' and four job levels. Designed to showcase violin, box, yPlot, density, and
+#' and four job levels. Designed to showcase box, yPlot, density, and
 #' histogram plot modules with realistic numeric distributions.
 #'
 #' @format A data frame with 500 rows and 9 columns:

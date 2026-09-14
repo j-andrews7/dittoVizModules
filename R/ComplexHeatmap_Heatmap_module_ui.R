@@ -595,14 +595,16 @@ ComplexHeatmap_HeatmapInputsUI <- function(id, data, defaults = NULL, title = NU
 #' [ComplexHeatmap_HeatmapInfoOutputUI()]
 #' @examples
 #' library(VizModules)
-#' # Default combined widget:
-#' ComplexHeatmap_HeatmapOutputUI("heatmap")
-#' # Same widget, main heatmap on its own row above sub-heatmap + info:
-#' ComplexHeatmap_HeatmapOutputUI("heatmap", layout = "1|(2-3)")
-#' # Compact: no sub-heatmap panel, click/brush info floats near the cursor
-#' ComplexHeatmap_HeatmapOutputUI("heatmap", compact = TRUE)
-#' # Fixed pixel widths, ignoring the container:
-#' ComplexHeatmap_HeatmapOutputUI("heatmap", fit.width = FALSE)
+#' if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+#'     # Default combined widget:
+#'     ComplexHeatmap_HeatmapOutputUI("heatmap")
+#'     # Same widget, main heatmap on its own row above sub-heatmap + info:
+#'     ComplexHeatmap_HeatmapOutputUI("heatmap", layout = "1|(2-3)")
+#'     # Compact: no sub-heatmap panel, click/brush info floats near the cursor
+#'     ComplexHeatmap_HeatmapOutputUI("heatmap", compact = TRUE)
+#'     # Fixed pixel widths, ignoring the container:
+#'     ComplexHeatmap_HeatmapOutputUI("heatmap", fit.width = FALSE)
+#' }
 ComplexHeatmap_HeatmapOutputUI <- function(id, resizable = TRUE, fit.width = TRUE, ...) {
     ns <- NS(id)
     if (!requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
@@ -663,7 +665,9 @@ ComplexHeatmap_HeatmapOutputUI <- function(id, resizable = TRUE, fit.width = TRU
 #' [ComplexHeatmap_HeatmapInfoOutputUI()]
 #' @examples
 #' library(VizModules)
-#' ComplexHeatmap_HeatmapMainOutputUI("heatmap", title = "Heatmap")
+#' if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+#'     ComplexHeatmap_HeatmapMainOutputUI("heatmap", title = "Heatmap")
+#' }
 ComplexHeatmap_HeatmapMainOutputUI <- function(id, title = NULL, width = 450, height = 350,
                                                fit.width = TRUE, ...) {
     ns <- NS(id)
@@ -717,7 +721,9 @@ ComplexHeatmap_HeatmapMainOutputUI <- function(id, title = NULL, width = 450, he
 #' [ComplexHeatmap_HeatmapInfoOutputUI()]
 #' @examples
 #' library(VizModules)
-#' ComplexHeatmap_HeatmapSubOutputUI("heatmap", title = "Selected region")
+#' if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+#'     ComplexHeatmap_HeatmapSubOutputUI("heatmap", title = "Selected region")
+#' }
 ComplexHeatmap_HeatmapSubOutputUI <- function(id, title = NULL, width = 400, height = 350,
                                               fit.width = TRUE, ...) {
     ns <- NS(id)
@@ -768,7 +774,9 @@ ComplexHeatmap_HeatmapSubOutputUI <- function(id, title = NULL, width = 400, hei
 #' [ComplexHeatmap_HeatmapSubOutputUI()]
 #' @examples
 #' library(VizModules)
-#' ComplexHeatmap_HeatmapInfoOutputUI("heatmap", title = "Details")
+#' if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+#'     ComplexHeatmap_HeatmapInfoOutputUI("heatmap", title = "Details")
+#' }
 ComplexHeatmap_HeatmapInfoOutputUI <- function(id, title = NULL, width = 400, ...) {
     ns <- NS(id)
     if (!requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
@@ -787,6 +795,73 @@ ComplexHeatmap_HeatmapInfoOutputUI <- function(id, title = NULL, width = 400, ..
         ns("Heatmap"),
         enable = isTRUE(dots$output_ui_float)
     )
+}
+
+
+#' Static (non-interactive) heatmap output UI component for the ComplexHeatmap module
+#'
+#' Renders the heatmap as a plain [shiny::plotOutput()] instead of an
+#' \pkg{InteractiveComplexHeatmap} widget. The same [ComplexHeatmap_HeatmapServer()]
+#' call backs both, so switching between them needs no server-side change --
+#' use this function *or* the interactive output functions for a given module
+#' `id`, not both.
+#'
+#' What is given up is the widget's interactivity: cell hover/click, the
+#' sub-heatmap zoom, and the brush info panel. What is gained is a panel with no
+#' chrome of its own. \pkg{InteractiveComplexHeatmap} draws a grey border around
+#' the heatmap panel, a control tab strip beneath it, and sizes itself in fixed
+#' pixels; none of that can be switched off through an argument, since the
+#' border is set by an id selector in that package's own stylesheet. A
+#' `plotOutput` has none of it and fills its container at whatever `width` and
+#' `height` say, which is what a figure panel wants -- it is how the
+#' `ComplexHeatmap` module appears in the Figure Builder (see
+#' [figureBuilderServer()]).
+#'
+#' Unlike the interactive output, this needs only \pkg{ComplexHeatmap} itself,
+#' not \pkg{InteractiveComplexHeatmap}.
+#'
+#' @param id The ID for the Shiny module. Must match the `id` used for
+#'   [ComplexHeatmap_HeatmapServer()].
+#' @param resizable Logical; whether to wrap the plot in a resizable container.
+#'   Unlike [ComplexHeatmap_HeatmapOutputUI()], this is honoured, since a
+#'   `plotOutput` has no resize handle of its own.
+#' @param width,height Passed to [shiny::plotOutput()]. The defaults fill the
+#'   containing element, so the heatmap follows its container's size.
+#'
+#' @return A Shiny UI object for the static heatmap.
+#'
+#' @import shiny
+#' @importFrom shinyjqui jqui_resizable
+#'
+#' @export
+#' @author Jared Andrews
+#' @seealso [ComplexHeatmap_HeatmapOutputUI()] for the interactive widget,
+#' [ComplexHeatmap_HeatmapServer()]
+#' @examples
+#' library(VizModules)
+#' if (requireNamespace("ComplexHeatmap", quietly = TRUE)) {
+#'     ComplexHeatmap_HeatmapStaticOutputUI("heatmap")
+#'     # Fixed size, no resize handle:
+#'     ComplexHeatmap_HeatmapStaticOutputUI("heatmap",
+#'         resizable = FALSE, width = "600px", height = "400px"
+#'     )
+#' }
+ComplexHeatmap_HeatmapStaticOutputUI <- function(id, resizable = TRUE,
+                                                 width = "100%", height = "100%") {
+    ns <- NS(id)
+    if (!requireNamespace("ComplexHeatmap", quietly = TRUE)) {
+        stop(
+            "The 'ComplexHeatmap' package is required for the ",
+            "ComplexHeatmap module. Install it with ",
+            "BiocManager::install('ComplexHeatmap')."
+        )
+    }
+
+    plot_output <- plotOutput(ns("HeatmapStatic"), width = width, height = height)
+    if (isTRUE(resizable)) {
+        plot_output <- jqui_resizable(plot_output)
+    }
+    plot_output
 }
 
 

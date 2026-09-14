@@ -24,8 +24,8 @@ example_sales
 }
 \description{
 A simulated product-sales dataset (720 rows total).
-Designed to showcase bar, box, violin,
-area, line, scatter, split-bar, density, and histogram plot modules.
+Designed to showcase bar, box, area, line, scatter,
+split-bar, density, and histogram plot modules.
 }
 \author{
 Jared Andrews

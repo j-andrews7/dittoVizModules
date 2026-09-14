@@ -71,7 +71,13 @@ organize_inputs <- function(
             tabs[["id"]] <- id
         }
 
-        out <- do.call(tabsetPanel, tabs)
+        # Marked so the stylesheet can let the tab strip wrap. Seven tabs do not
+        # fit a narrow sidebar in one row, and Bootstrap 5 lays them out with
+        # flex rather than floats, so they overflow rather than wrapping.
+        out <- tagAppendAttributes(
+            do.call(tabsetPanel, tabs),
+            class = "vizmodules-input-tabs"
+        )
     } else {
         # Flatten nested input groups (e.g. the tagLists returned by the
         # .uniform_*_inputs_ui() helpers) so each of their inputs occupies its
@@ -107,21 +113,15 @@ organize_inputs <- function(
         # of fixed Bootstrap rows. Each input lives in its own `.vizmodules-input-cell`
         # so that hiding a cell (see `hide_input()`) lets the remaining inputs
         # reflow and pack together with no empty gaps.
-        cell.style <- sprintf(
-            paste0(
-                "flex: 0 0 calc(100%% / %1$d); max-width: calc(100%% / %1$d); ",
-                "padding-left: 15px; padding-right: 15px; box-sizing: border-box;"
-            ),
-            columns
-        )
+        #
+        # The layout itself lives in vizModules.css so a host app can override it
+        # normally; only the column count comes through here, as a custom
+        # property the cells inherit.
         out <- div(
             class = "vizmodules-input-grid",
-            style = paste0(
-                "display: flex; flex-wrap: wrap; align-items: flex-start; ",
-                "margin-left: -15px; margin-right: -15px;"
-            ),
+            style = paste0("--viz-input-columns: ", columns, ";"),
             lapply(seq_len(n.tags), function(idx) {
-                div(class = "vizmodules-input-cell", style = cell.style, tag.list[[idx]])
+                div(class = "vizmodules-input-cell", tag.list[[idx]])
             })
         )
     }
@@ -134,7 +134,32 @@ organize_inputs <- function(
         out <- tagList(title, out)
     }
 
-    out
+    attachDependencies(out, .viz_modules_dependency(), append = TRUE)
+}
+
+
+#' HTML dependency for the shared module layout styles
+#'
+#' Carries the rules for the control grid and tab strip that
+#' [organize_inputs()] builds. Kept in a stylesheet rather than inline on every
+#' element so a host app can override them with ordinary specificity instead of
+#' `!important`.
+#'
+#' @return An `htmltools::htmlDependency` object.
+#'
+#' @importFrom htmltools htmlDependency
+#'
+#' @author Jared Andrews
+#' @rdname INTERNAL_viz_modules_dependency
+#' @keywords internal
+.viz_modules_dependency <- function() {
+    htmlDependency(
+        name = "viz-modules",
+        version = as.character(utils::packageVersion("VizModules")),
+        src = "src",
+        package = "VizModules",
+        stylesheet = "vizModules.css"
+    )
 }
 
 #' Hide or show the grid cell wrapping a module input
@@ -297,8 +322,14 @@ default_palettes <- function() {
 #' Create standard tack UI for module inputs
 #'
 #' Generates a consistent set of control buttons for VizModules that includes
-#' Auto Update toggle, Update and Reset buttons, and
-#' a full source download button (self-contained HTML of the plot, source data, and statistics).
+#' Auto Update toggle, Update and Reset buttons, and a full source download
+#' button (self-contained HTML of the plot, SVG and PNG images of it, and the
+#' source data and statistics as CSVs).
+#'
+#' The download button carries the markup the image capture needs: the class the
+#' script binds to, and the module's namespace prefix, which is how the script
+#' works out which plot on the page belongs to this button. See
+#' [create_source_download_handler()].
 #'
 #' @param ns Namespace function from the module (e.g., `ns <- NS(id)`).
 #' @param defaults Optional named list of default values. Reserved for future use.
@@ -306,6 +337,7 @@ default_palettes <- function() {
 #' @return A Shiny tagList containing the standard control buttons and inputs.
 #'
 #' @import shiny
+#' @importFrom htmltools attachDependencies
 #' @importFrom shinyWidgets materialSwitch
 #'
 #' @export
@@ -320,7 +352,7 @@ module_tack_ui <- function(ns, defaults = NULL) {
     # size to content (no fixed-width columns) so nothing truncates in a narrow
     # sidebar; Update/Reset share a row and the wider Source Download wraps to
     # its own full-width line.
-    tagList(
+    ui <- tagList(
         div(
             class = "module-tack",
             style = "margin-top: 12px;",
@@ -345,13 +377,19 @@ module_tack_ui <- function(ns, defaults = NULL) {
                     downloadButton(
                         ns("download.source"),
                         "Source Download",
-                        class = "btn-secondary",
+                        class = "btn-secondary viz-source-download",
                         icon = icon("file-code"),
-                        style = "flex: 1 1 100%;"
+                        style = "flex: 1 1 100%;",
+                        # How sourceExport.js finds this module's plot: every
+                        # output of this module, and only this module, is named
+                        # with this prefix.
+                        `data-viz-source-ns` = ns("")
                     ),
                     title = paste(
-                        "Download the plot as a self-contained HTML file,",
-                        "along with the plot source data and statistics (if applicable) as CSV files."
+                        "Download the plot as a self-contained HTML file and as",
+                        "SVG and PNG images of it as it looks now, along with",
+                        "the plot source data and statistics (if applicable) as",
+                        "CSV files."
                     ),
                     placement = "top",
                     options = list(container = "body")
@@ -359,4 +397,8 @@ module_tack_ui <- function(ns, defaults = NULL) {
             )
         )
     )
+
+    # Carried on the tack rather than the module's UI as a whole, so a module
+    # inserted into the Figure Builder at runtime brings the script with it.
+    attachDependencies(ui, .source_export_dependency(), append = TRUE)
 }

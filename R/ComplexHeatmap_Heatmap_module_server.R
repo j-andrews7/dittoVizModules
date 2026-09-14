@@ -39,6 +39,7 @@
 #'
 #' @import shiny
 #' @importFrom shinyjs delay
+#' @importFrom utils getFromNamespace
 #'
 #' @seealso [ComplexHeatmap::Heatmap()], [VizModules::ComplexHeatmap_HeatmapInputsUI()],
 #' [VizModules::ComplexHeatmap_HeatmapOutputUI()], [VizModules::ComplexHeatmap_HeatmapApp()]
@@ -493,6 +494,16 @@ ComplexHeatmap_HeatmapServer <- function(id, data, hide.inputs = NULL, hide.tabs
             ComplexHeatmap::draw(ht)
         })
 
+        # Static counterpart to the InteractiveComplexHeatmap widget, backing
+        # ComplexHeatmap_HeatmapStaticOutputUI(). This one is a plain module
+        # output, so ns("HeatmapStatic") lines up without any of the root-scope
+        # handling makeInteractiveComplexHeatmap() needs below. Only one of the
+        # two output forms is ever in the UI for a given id, and the unused
+        # renderer simply never runs.
+        output$HeatmapStatic <- renderPlot({
+            ComplexHeatmap::draw(build_heatmap())
+        })
+
         # makeInteractiveComplexHeatmap() uses `heatmap_id` verbatim as the
         # output slot name and in session/input message keys (see the package
         # source: output[[qq("@{heatmap_id}_heatmap")]], input[[qq(...)]],
@@ -609,6 +620,38 @@ ComplexHeatmap_HeatmapServer <- function(id, data, hide.inputs = NULL, hide.tabs
         # Capture all UI inputs for the source download.
         AllInputs <- reactive(reactiveValuesToList(input))
 
+        # This module's output is not a plotly graph, so neither the Figure
+        # Builder's canvas export nor the source download can photograph it in
+        # the browser. Both ask the module to draw itself instead, at whatever
+        # size the panel is on screen. The ids are namespaced per widget so two
+        # heatmap panels in one figure cannot claim each other's clip paths.
+        # `res` matches what renderPlot() drew the panel at, so the legends and
+        # labels -- which ComplexHeatmap sizes in absolute points -- keep the
+        # same share of the canvas they have on screen instead of crowding the
+        # cells out. See draw_to_svg().
+        heatmap_svg <- function(width, height, res = 72) {
+            ht <- build_heatmap()
+            if (is.null(ht)) {
+                return(NULL)
+            }
+            draw_to_svg(
+                function() ComplexHeatmap::draw(ht),
+                width = width, height = height, res = res,
+                id_prefix = .heatmap_widget_id(ns("Heatmap"))
+            )
+        }
+
+        heatmap_png <- function(width, height, res = 72) {
+            ht <- build_heatmap()
+            if (is.null(ht)) {
+                return(NULL)
+            }
+            draw_to_png(
+                function() ComplexHeatmap::draw(ht),
+                width = width, height = height, res = res
+            )
+        }
+
         # Heatmap-specific source collector. The shared create_source_download_handler()
         # writes object$plot via htmlwidgets::saveWidget(), which only accepts an
         # htmlwidget; a drawn Heatmap is not one, so `plot` is left NULL and we
@@ -627,7 +670,12 @@ ComplexHeatmap_HeatmapServer <- function(id, data, hide.inputs = NULL, hide.tabs
                 plot = NULL,
                 plot_data = as.data.frame(mat),
                 stats = NULL,
-                inputs = input_df
+                inputs = input_df,
+                # On the summary rather than only on the reactive, so the
+                # archive picks them up regardless of the order this server
+                # wires things together in.
+                vector_svg = heatmap_svg,
+                raster_png = heatmap_png
             )
         })
 
@@ -635,6 +683,11 @@ ComplexHeatmap_HeatmapServer <- function(id, data, hide.inputs = NULL, hide.tabs
             data_list = plot_source_reactive,
             filename_base = "ComplexHeatmap_source"
         )
+
+        # Vector export hook for the Figure Builder's canvas export, which reads
+        # the attribute rather than the summary (see figureBuilderServer()).
+        attr(plot_source_reactive, "vector_svg") <- heatmap_svg
+        attr(plot_source_reactive, "raster_png") <- heatmap_png
 
         return(plot_source_reactive)
     })

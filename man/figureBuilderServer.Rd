@@ -13,7 +13,10 @@ figureBuilderServer(id, data_list = NULL, module_registry = NULL)
 \item{data_list}{An optional named list of data frames that seed the dataset
 registry. If \code{NULL} (the default), the bundled example datasets (plus a
 \code{sales_by_product} summary suited to the pie plot) are used. At least one
-element is required and every element must be a data frame.}
+element is required. An element is either a data frame, or a named list of
+data frames for a module that needs companion tables (the \code{ComplexHeatmap}
+module's \code{list(matrix = , column_annotations = )}); in the latter case only
+the primary table is filtered and shown in the panel's table pane.}
 
 \item{module_registry}{An optional named list describing the plot modules to
 offer. If \code{NULL} (the default), all bundled VizModules modules are offered.
@@ -23,7 +26,26 @@ for), \code{inputs_ui}, \code{output_ui}, and \code{server_fn} (the module's thr
 functions), and \code{defaults} (a named list of input defaults applied only when
 \code{dataset} is the chosen dataset). \code{defaults} is passed to both \code{inputs_ui}
 and \code{server_fn}, so it can seed server-rendered controls such as the group
-color picker.}
+color picker. An entry may also carry \code{primary.table}, naming which table of
+a multi-table dataset gets filtered (the first by default); its presence is
+also what marks the module as able to take a multi-table dataset at all, so
+modules without it are handed the primary table alone and any dataset stays
+usable with any module.
+
+A module whose output is not a plotly graph can still contribute to the SVG
+figure export by attaching a \code{vector_svg} attribute to the reactive its
+server returns: a \verb{function(width, height, res)} yielding an \verb{<svg>}
+element drawn at that pixel size, which is spliced into the figure in place
+of the \code{Plotly.toImage()} result. \code{\link[=draw_to_svg]{draw_to_svg()}} builds one from any grid
+or base drawing; \code{\link[=ComplexHeatmap_HeatmapServer]{ComplexHeatmap_HeatmapServer()}} is the worked example. A
+panel whose module attaches nothing simply contributes no artwork.
+
+The same renderers feed the source archive, which additionally wants a
+\code{raster_png} counterpart returning PNG bytes (see \code{\link[=draw_to_png]{draw_to_png()}}). Either
+can be given as an attribute on the reactive, as here, or as a field on the
+summary list the reactive returns -- the latter being order-independent,
+since the summary is rebuilt on every download. See
+\code{\link[=create_source_download_handler]{create_source_download_handler()}}.}
 }
 \value{
 Invisibly returns \code{NULL}; called for its side effects (wiring up the
