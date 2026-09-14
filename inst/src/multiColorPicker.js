@@ -241,6 +241,14 @@
       labelField: "text",
       searchField: ["text"],
       dropdownParent: "body",
+      // Parenting to <body> puts the dropdown outside the widget, so the rules
+      // that style it cannot be scoped to `.multi-color-picker`. Without a
+      // marker of its own they had to be written against selectize's generic
+      // class names, which restyled every other selectize dropdown on the host
+      // page -- plain selectInput()s and DT column filters included. Selectize
+      // replaces its default dropdownClass wholesale, so `selectize-dropdown`
+      // has to be restated here alongside ours.
+      dropdownClass: "selectize-dropdown mc-palette-dropdown",
       render: {
         option: function (item, escape) {
           const swatches = (item.colors || [])

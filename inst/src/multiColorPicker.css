@@ -225,33 +225,37 @@
   padding: 2px 4px;
 }
 
-/* Dropdown lives outside the widget container; keep these unscoped */
-.selectize-dropdown .option {
+/* The dropdown is parented to <body>, so it sits outside
+   .multi-color-picker and cannot be scoped to it. It carries its own
+   .mc-palette-dropdown marker instead (dropdownClass in
+   multiColorPicker.js) -- these must never be written against selectize's
+   generic class names, which would restyle every dropdown on the page. */
+.mc-palette-dropdown .option {
   padding: 0 !important;
 }
 
-.selectize-dropdown .selectize-dropdown-content {
+.mc-palette-dropdown .selectize-dropdown-content {
   padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.selectize-dropdown .optgroup-header {
+.mc-palette-dropdown .optgroup-header {
   font-size: 12px;
   font-weight: 700;
   color: #495057;
   padding: 4px 2px;
 }
 
-.selectize-dropdown .mc-palette-option {
+.mc-palette-dropdown .mc-palette-option {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
 }
 
-.selectize-dropdown .mc-palette-name {
+.mc-palette-dropdown .mc-palette-name {
   position: absolute;
   inset: 0;
   display: flex;
@@ -263,7 +267,7 @@
   pointer-events: none;
 }
 
-.selectize-dropdown .mc-palette-bar {
+.mc-palette-dropdown .mc-palette-bar {
   display: flex;
   gap: 1px;
   flex: 1;
@@ -274,24 +278,24 @@
   overflow: hidden;
 }
 
-.selectize-dropdown .mc-option-swatch {
+.mc-palette-dropdown .mc-option-swatch {
   flex: 1;
   min-width: 8px;
   height: 18px;
   box-sizing: border-box;
 }
 
-.selectize-dropdown.mc-compact .selectize-dropdown-content {
+.mc-palette-dropdown.mc-compact .selectize-dropdown-content {
   padding: 4px;
   gap: 4px;
 }
 
-.selectize-dropdown.mc-compact .mc-palette-bar {
+.mc-palette-dropdown.mc-compact .mc-palette-bar {
   min-width: 120px;
   height: 16px;
 }
 
-.selectize-dropdown.mc-compact .mc-option-swatch {
+.mc-palette-dropdown.mc-compact .mc-option-swatch {
   min-width: 7px;
   height: 16px;
 }
@@ -352,13 +356,13 @@
   height: 14px;
 }
 
-.selectize-dropdown .is-compact .mc-palette-bar {
+.mc-palette-dropdown .is-compact .mc-palette-bar {
   min-width: 110px;
   height: 14px;
 }
 
 .multi-color-picker.is-compact .mc-option-swatch,
-.selectize-dropdown .is-compact .mc-option-swatch {
+.mc-palette-dropdown .is-compact .mc-option-swatch {
   min-width: 6px;
   height: 14px;
 }

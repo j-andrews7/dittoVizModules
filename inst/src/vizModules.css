@@ -1,0 +1,46 @@
+/* Layout for the module control grid built by organize_inputs().
+ *
+ * These rules used to be inline styles on every grid and cell, which made them
+ * effectively unoverridable -- a host app had to fight them with !important --
+ * and the grid used Bootstrap's negative-margin row idiom, which assumes a
+ * parent with at least as much horizontal padding to absorb it. Dropped into a
+ * sidebar with less padding than that (a bslib::sidebar(), say), the grid
+ * overhung on both sides and the sidebar grew a horizontal scrollbar.
+ *
+ * A column gap does the same job with no such assumption, and living here means
+ * a host can restyle it with ordinary specificity. Only the column count stays
+ * inline, as a custom property, because it varies per call.
+ */
+.vizmodules-input-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: var(--viz-input-gap, 30px);
+}
+
+/* Each cell takes an equal share of what is left once the gaps are removed.
+ * min-width: 0 lets a cell shrink below its content's intrinsic width, without
+ * which a long select or label would push the grid wider than its container --
+ * the same overflow by a different route.
+ */
+.vizmodules-input-cell {
+  --viz-input-cell-width: calc(
+    (100% - (var(--viz-input-columns, 1) - 1) * var(--viz-input-gap, 30px)) /
+      var(--viz-input-columns, 1)
+  );
+  flex: 0 0 var(--viz-input-cell-width);
+  max-width: var(--viz-input-cell-width);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* A module's control tabset carries seven tabs (Data, Facet, Aesthetics,
+ * Legend, Plotly, Axes, Lines), which do not fit one row in a narrow sidebar.
+ * Both Bootstrap 3 (floats) and Bootstrap 5 (.nav sets flex-wrap: wrap) already
+ * wrap them unaided, so this is belt and braces for a theme that sets nowrap --
+ * it is not known to change anything on a stock Bootstrap page.
+ */
+.vizmodules-input-tabs > .nav-tabs,
+.vizmodules-input-tabs > .nav.nav-tabs {
+  flex-wrap: wrap;
+}
