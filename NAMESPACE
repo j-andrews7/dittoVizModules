@@ -294,6 +294,7 @@ importFrom(tools,
 )
 importFrom(utils,
   combn,
+  getFromNamespace,
   modifyList,
   read.csv,
   read.delim,

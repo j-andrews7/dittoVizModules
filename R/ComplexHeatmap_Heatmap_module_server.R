@@ -39,6 +39,7 @@
 #'
 #' @import shiny
 #' @importFrom shinyjs delay
+#' @importFrom utils getFromNamespace
 #'
 #' @seealso [ComplexHeatmap::Heatmap()], [VizModules::ComplexHeatmap_HeatmapInputsUI()],
 #' [VizModules::ComplexHeatmap_HeatmapOutputUI()], [VizModules::ComplexHeatmap_HeatmapApp()]
