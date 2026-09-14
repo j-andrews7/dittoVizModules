@@ -49,11 +49,13 @@ not \pkg{InteractiveComplexHeatmap}.
 }
 \examples{
 library(VizModules)
-ComplexHeatmap_HeatmapStaticOutputUI("heatmap")
-# Fixed size, no resize handle:
-ComplexHeatmap_HeatmapStaticOutputUI("heatmap",
-    resizable = FALSE, width = "600px", height = "400px"
-)
+if (requireNamespace("ComplexHeatmap", quietly = TRUE)) {
+    ComplexHeatmap_HeatmapStaticOutputUI("heatmap")
+    # Fixed size, no resize handle:
+    ComplexHeatmap_HeatmapStaticOutputUI("heatmap",
+        resizable = FALSE, width = "600px", height = "400px"
+    )
+}
 }
 \seealso{
 \code{\link[=ComplexHeatmap_HeatmapOutputUI]{ComplexHeatmap_HeatmapOutputUI()}} for the interactive widget,

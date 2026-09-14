@@ -192,7 +192,7 @@ dumbbellPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL, d
         })
 
         observeEvent(input$facet.by, {
-            if (!input$facet.by == "") {
+            if (.nz_value(input$facet.by)) {
                 show_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
             } else {
                 hide_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
@@ -233,7 +233,7 @@ dumbbellPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL, d
             y_title <- y_input
 
             x.adjustment <- NULL
-            if (!isolate_fn(input$x.adjustment) == "") {
+            if (.nz_value(isolate_fn(input$x.adjustment))) {
                 x.adjustment <- isolate_fn(input$x.adjustment)
             }
 
@@ -244,7 +244,7 @@ dumbbellPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL, d
             }
 
             facet.by <- NULL
-            if (!isolate_fn(input$facet.by) == "") {
+            if (.nz_value(isolate_fn(input$facet.by))) {
                 facet.by <- isolate_fn(input$facet.by)
             }
 

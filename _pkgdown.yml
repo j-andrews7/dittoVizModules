@@ -273,11 +273,15 @@ reference:
       - resolve_palette
       - setup_group_colors
 
-  - title: "Data Download Utilities"
-    desc: "Functions for preparing plot and source data for download."
+  - title: "Export & Download Utilities"
+    desc: >
+      Functions for preparing plot and source data for download, and for
+      rendering a plot that is not a plotly graph to a vector or raster image.
     contents:
       - collect_source_data
       - create_source_download_handler
+      - draw_to_png
+      - draw_to_svg
 
   - title: "Utility Functions"
     desc: "General-purpose helper functions for data handling and validation."

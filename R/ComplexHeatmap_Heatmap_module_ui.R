@@ -595,14 +595,16 @@ ComplexHeatmap_HeatmapInputsUI <- function(id, data, defaults = NULL, title = NU
 #' [ComplexHeatmap_HeatmapInfoOutputUI()]
 #' @examples
 #' library(VizModules)
-#' # Default combined widget:
-#' ComplexHeatmap_HeatmapOutputUI("heatmap")
-#' # Same widget, main heatmap on its own row above sub-heatmap + info:
-#' ComplexHeatmap_HeatmapOutputUI("heatmap", layout = "1|(2-3)")
-#' # Compact: no sub-heatmap panel, click/brush info floats near the cursor
-#' ComplexHeatmap_HeatmapOutputUI("heatmap", compact = TRUE)
-#' # Fixed pixel widths, ignoring the container:
-#' ComplexHeatmap_HeatmapOutputUI("heatmap", fit.width = FALSE)
+#' if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+#'     # Default combined widget:
+#'     ComplexHeatmap_HeatmapOutputUI("heatmap")
+#'     # Same widget, main heatmap on its own row above sub-heatmap + info:
+#'     ComplexHeatmap_HeatmapOutputUI("heatmap", layout = "1|(2-3)")
+#'     # Compact: no sub-heatmap panel, click/brush info floats near the cursor
+#'     ComplexHeatmap_HeatmapOutputUI("heatmap", compact = TRUE)
+#'     # Fixed pixel widths, ignoring the container:
+#'     ComplexHeatmap_HeatmapOutputUI("heatmap", fit.width = FALSE)
+#' }
 ComplexHeatmap_HeatmapOutputUI <- function(id, resizable = TRUE, fit.width = TRUE, ...) {
     ns <- NS(id)
     if (!requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
@@ -663,7 +665,9 @@ ComplexHeatmap_HeatmapOutputUI <- function(id, resizable = TRUE, fit.width = TRU
 #' [ComplexHeatmap_HeatmapInfoOutputUI()]
 #' @examples
 #' library(VizModules)
-#' ComplexHeatmap_HeatmapMainOutputUI("heatmap", title = "Heatmap")
+#' if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+#'     ComplexHeatmap_HeatmapMainOutputUI("heatmap", title = "Heatmap")
+#' }
 ComplexHeatmap_HeatmapMainOutputUI <- function(id, title = NULL, width = 450, height = 350,
                                                fit.width = TRUE, ...) {
     ns <- NS(id)
@@ -717,7 +721,9 @@ ComplexHeatmap_HeatmapMainOutputUI <- function(id, title = NULL, width = 450, he
 #' [ComplexHeatmap_HeatmapInfoOutputUI()]
 #' @examples
 #' library(VizModules)
-#' ComplexHeatmap_HeatmapSubOutputUI("heatmap", title = "Selected region")
+#' if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+#'     ComplexHeatmap_HeatmapSubOutputUI("heatmap", title = "Selected region")
+#' }
 ComplexHeatmap_HeatmapSubOutputUI <- function(id, title = NULL, width = 400, height = 350,
                                               fit.width = TRUE, ...) {
     ns <- NS(id)
@@ -768,7 +774,9 @@ ComplexHeatmap_HeatmapSubOutputUI <- function(id, title = NULL, width = 400, hei
 #' [ComplexHeatmap_HeatmapSubOutputUI()]
 #' @examples
 #' library(VizModules)
-#' ComplexHeatmap_HeatmapInfoOutputUI("heatmap", title = "Details")
+#' if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+#'     ComplexHeatmap_HeatmapInfoOutputUI("heatmap", title = "Details")
+#' }
 ComplexHeatmap_HeatmapInfoOutputUI <- function(id, title = NULL, width = 400, ...) {
     ns <- NS(id)
     if (!requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
@@ -831,11 +839,13 @@ ComplexHeatmap_HeatmapInfoOutputUI <- function(id, title = NULL, width = 400, ..
 #' [ComplexHeatmap_HeatmapServer()]
 #' @examples
 #' library(VizModules)
-#' ComplexHeatmap_HeatmapStaticOutputUI("heatmap")
-#' # Fixed size, no resize handle:
-#' ComplexHeatmap_HeatmapStaticOutputUI("heatmap",
-#'     resizable = FALSE, width = "600px", height = "400px"
-#' )
+#' if (requireNamespace("ComplexHeatmap", quietly = TRUE)) {
+#'     ComplexHeatmap_HeatmapStaticOutputUI("heatmap")
+#'     # Fixed size, no resize handle:
+#'     ComplexHeatmap_HeatmapStaticOutputUI("heatmap",
+#'         resizable = FALSE, width = "600px", height = "400px"
+#'     )
+#' }
 ComplexHeatmap_HeatmapStaticOutputUI <- function(id, resizable = TRUE,
                                                  width = "100%", height = "100%") {
     ns <- NS(id)

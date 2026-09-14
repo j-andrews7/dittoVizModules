@@ -30,7 +30,9 @@ fit together.
 }
 \examples{
 library(VizModules)
-ComplexHeatmap_HeatmapInfoOutputUI("heatmap", title = "Details")
+if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+    ComplexHeatmap_HeatmapInfoOutputUI("heatmap", title = "Details")
+}
 }
 \seealso{
 \code{\link[InteractiveComplexHeatmap:HeatmapInfoOutput]{InteractiveComplexHeatmap::HeatmapInfoOutput()}},

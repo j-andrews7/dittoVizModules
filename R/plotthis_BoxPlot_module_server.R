@@ -277,7 +277,7 @@ plotthis_BoxPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
         )
 
         observeEvent(input$facet.by, {
-            if (!input$facet.by == "") {
+            if (.nz_value(input$facet.by)) {
                 show_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
             } else {
                 hide_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
@@ -292,17 +292,17 @@ plotthis_BoxPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
 
             # Facet By Null option Upstream:
             facet.by <- NULL
-            if (!isolate_fn(input$facet.by) == "") {
+            if (.nz_value(isolate_fn(input$facet.by))) {
                 update_viz_select(session, "sort_x", selected = "") # Makes sure order x is not active when facet by is active
                 facet.by <- isolate_fn(input$facet.by)
             }
 
             group.by <- NULL
-            if (!isolate_fn(input$group.by) == "") {
+            if (.nz_value(isolate_fn(input$group.by))) {
                 group.by <- isolate_fn(input$group.by)
             }
             sort.x <- NULL
-            if (!isolate_fn(input$sort_x) == "") {
+            if (.nz_value(isolate_fn(input$sort_x))) {
                 sort.x <- isolate_fn(input$sort_x)
             }
             highlight <- validate_expression(isolate_fn(input$highlight), names(data()))

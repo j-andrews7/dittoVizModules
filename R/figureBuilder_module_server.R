@@ -51,6 +51,62 @@
 }
 
 
+#' Collect every panel's source summary for the Figure Builder's archive
+#'
+#' Gathers what each panel's module reports about itself and names each entry
+#' after the panel's label, so the archive reads the way the canvas looks.
+#'
+#' Two things are added on the way through. Each summary is tagged with its
+#' panel id, because the browser photographs cards by id while the archive names
+#' them by the generated label, and [create_source_download_handler()] needs the
+#' two to meet. And a module that
+#' declares its renderers the older way -- as attributes on the reactive, the
+#' `vector_svg` contract in [figureBuilderServer()] -- has them copied onto the
+#' summary, so panels the browser cannot photograph still draw themselves.
+#'
+#' @param ids Panel ids, in canvas order.
+#' @param sources The per-panel source reactives, keyed by panel id.
+#' @param labels The per-panel labels, keyed by panel id.
+#'
+#' @return A named list of summaries, one per panel that produced one.
+#'
+#' @author Jared Andrews
+#' @rdname INTERNAL_figure_builder_sources
+#' @keywords internal
+.figure_builder_sources <- function(ids, sources, labels) {
+    out <- lapply(ids, function(p) {
+        sr <- sources[[p]]
+        if (is.null(sr)) {
+            return(NULL)
+        }
+        # Skip (rather than abort the whole download) if a single panel's
+        # source cannot be built.
+        src <- tryCatch(sr(), error = function(e) {
+            warning(
+                "Could not build source for panel '", p, "': ",
+                conditionMessage(e)
+            )
+            NULL
+        })
+        if (is.null(src)) {
+            return(NULL)
+        }
+
+        src$svg_key <- p
+        if (!is.function(src$vector_svg)) {
+            src$vector_svg <- attr(sr, "vector_svg")
+        }
+        if (!is.function(src$raster_png)) {
+            src$raster_png <- attr(sr, "raster_png")
+        }
+        src
+    })
+
+    names(out) <- vapply(ids, function(p) labels[[p]], character(1))
+    out[!vapply(out, is.null, logical(1))]
+}
+
+
 #' Server logic for the Figure Builder module
 #'
 #' Powers the multi-panel **Figure Builder** module rendered by
@@ -91,9 +147,16 @@
 #'   figure export by attaching a `vector_svg` attribute to the reactive its
 #'   server returns: a `function(width, height, res)` yielding an `<svg>`
 #'   element drawn at that pixel size, which is spliced into the figure in place
-#'   of the `Plotly.toImage()` result. `.draw_to_svg()` builds one from any grid
-#'   or base drawing; `ComplexHeatmap_HeatmapServer()` is the worked example. A
+#'   of the `Plotly.toImage()` result. [draw_to_svg()] builds one from any grid
+#'   or base drawing; [ComplexHeatmap_HeatmapServer()] is the worked example. A
 #'   panel whose module attaches nothing simply contributes no artwork.
+#'
+#'   The same renderers feed the source archive, which additionally wants a
+#'   `raster_png` counterpart returning PNG bytes (see [draw_to_png()]). Either
+#'   can be given as an attribute on the reactive, as here, or as a field on the
+#'   summary list the reactive returns -- the latter being order-independent,
+#'   since the summary is rebuilt on every download. See
+#'   [create_source_download_handler()].
 #'
 #' @return Invisibly returns `NULL`; called for its side effects (wiring up the
 #'   Figure Builder module's reactive logic).
@@ -217,7 +280,7 @@ figureBuilderServer <- function(id, data_list = NULL, module_registry = NULL) {
 
             nm <- trimws(input$pb_data_name)
 
-            if (!nzchar(nm)) {
+            if (!.nz_value(nm)) {
                 nm <- tools::file_path_sans_ext(basename(file$name))
             }
 
@@ -528,28 +591,7 @@ figureBuilderServer <- function(id, data_list = NULL, module_registry = NULL) {
                     "Add at least one plot before downloading."
                 ))
 
-                sources <- lapply(ids, function(p) {
-                    sr <- panel_sources[[p]]
-                    if (is.null(sr)) {
-                        return(NULL)
-                    }
-                    # Skip (rather than abort the whole download) if a single
-                    # panel's source cannot be built.
-                    tryCatch(sr(), error = function(e) {
-                        warning(
-                            "Could not build source for panel '", p, "': ",
-                            conditionMessage(e)
-                        )
-                        NULL
-                    })
-                })
-
-                names(sources) <- vapply(
-                    ids,
-                    function(p) rv$labels[[p]], character(1)
-                )
-
-                sources[!vapply(sources, is.null, logical(1))]
+                .figure_builder_sources(ids, panel_sources, rv$labels)
             }),
             filename_base = "panel_source"
         )

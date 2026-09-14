@@ -386,41 +386,43 @@ figureBuilderApp <- function(data_list = NULL,
 
 /* --- Compact sidebar -------------------------------------------------------
    Tighten vertical rhythm so more controls fit without scrolling. Scoped to
-   the sidebar well so the canvas and data-filter area keep their spacing. */
-.well {
+   this builder's own layout: `.well` on its own is Bootstrap's class, which
+   shiny::sidebarPanel() renders, so styling it bare reached every well on a
+   host page that embedded the builder. */
+.pb-app .well {
     padding: 10px 12px;
 }
-.well h4 {
+.pb-app .well h4 {
     margin-top: 8px;
     margin-bottom: 6px;
     font-size: 15px;
 }
-.well hr {
+.pb-app .well hr {
     margin-top: 8px;
     margin-bottom: 8px;
     border-top: 1px solid #ccc;
 }
-.well .help-block {
+.pb-app .well .help-block {
     margin-top: 2px;
     margin-bottom: 4px;
     font-size: 11px;
     line-height: 1.3;
 }
-.well .form-group {
+.pb-app .well .form-group {
     margin-bottom: 8px;
 }
-.well .control-label {
+.pb-app .well .control-label {
     margin-bottom: 2px;
 }
-.well .btn {
+.pb-app .well .btn {
     padding: 4px 10px;
 }
 /* Trim the gap shiny adds around fileInput's progress bar. */
-.well .form-group .progress {
+.pb-app .well .form-group .progress {
     margin-bottom: 4px;
 }
 /* Make the two primary action buttons fill their half-row columns. */
-.well .btn-block {
+.pb-app .well .btn-block {
     width: 100%;
 }
 /* Collapsible 'Load Data' disclosure: a clickable heading that hides its

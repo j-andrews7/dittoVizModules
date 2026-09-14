@@ -246,7 +246,7 @@ plotthis_ViolinPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = 
         })
 
         observeEvent(input$facet.by, {
-            if (!input$facet.by == "") {
+            if (.nz_value(input$facet.by)) {
                 show_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
             } else {
                 hide_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
@@ -268,11 +268,11 @@ plotthis_ViolinPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = 
 
             # Facet By Null option Upstream:
             facet.by <- NULL
-            if (!isolate_fn(input$facet.by) == "") {
+            if (.nz_value(isolate_fn(input$facet.by))) {
                 facet.by <- isolate_fn(input$facet.by)
             }
             group.by <- NULL
-            if (!isolate_fn(input$group.by) == "") {
+            if (.nz_value(isolate_fn(input$group.by))) {
                 group.by <- isolate_fn(input$group.by)
             }
             highlight <- validate_expression(isolate_fn(input$highlight), names(data()))
@@ -293,7 +293,7 @@ plotthis_ViolinPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = 
                 palcolor_arg <- as.list(palette_values)
             }
             sort.x <- NULL
-            if (!isolate_fn(input$sort_x) == "") {
+            if (.nz_value(isolate_fn(input$sort_x))) {
                 sort.x <- isolate_fn(input$sort_x)
             }
             theme_args <- create_ggplot_axis_style(input, isolate_fn = isolate_fn)

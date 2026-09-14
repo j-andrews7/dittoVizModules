@@ -153,7 +153,7 @@ plotthis_DotPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
         })
 
         observeEvent(input$facet.by, {
-            if (!input$facet.by == "") {
+            if (.nz_value(input$facet.by)) {
                 show_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
             } else {
                 hide_input(session, c("facet.title.font.size", "facet.title.font.color", "facet.title.font.family"))
@@ -164,7 +164,7 @@ plotthis_DotPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
         # so only expose them when a fill column is selected.
         observeEvent(input$fill.by, {
             fill.scale.inputs <- c("lower.quantile", "upper.quantile", "lower.cutoff", "upper.cutoff")
-            if (nzchar(input$fill.by)) {
+            if (.nz_value(input$fill.by)) {
                 show_input(session, fill.scale.inputs)
             } else {
                 hide_input(session, fill.scale.inputs)
@@ -176,17 +176,17 @@ plotthis_DotPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NUL
 
             # Null Values:
             facet.by <- NULL
-            if (!isolate_fn(input$facet.by) == "") {
+            if (.nz_value(isolate_fn(input$facet.by))) {
                 facet.by <- isolate_fn(input$facet.by)
             }
 
             size.by <- NULL
-            if (nzchar(isolate_fn(input$size.by))) {
+            if (.nz_value(isolate_fn(input$size.by))) {
                 size.by <- isolate_fn(input$size.by)
             }
 
             fill.by <- NULL
-            if (nzchar(isolate_fn(input$fill.by))) {
+            if (.nz_value(isolate_fn(input$fill.by))) {
                 fill.by <- isolate_fn(input$fill.by)
             }
 

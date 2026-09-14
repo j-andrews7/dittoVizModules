@@ -41,7 +41,9 @@ pieces fit together.
 }
 \examples{
 library(VizModules)
-ComplexHeatmap_HeatmapSubOutputUI("heatmap", title = "Selected region")
+if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+    ComplexHeatmap_HeatmapSubOutputUI("heatmap", title = "Selected region")
+}
 }
 \seealso{
 \code{\link[InteractiveComplexHeatmap:subHeatmapOutput]{InteractiveComplexHeatmap::subHeatmapOutput()}},

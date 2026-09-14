@@ -284,9 +284,19 @@ test_that("a ComplexHeatmap panel works end to end on the canvas", {
 
         # The source-data bundle still works, with plot = NULL as before.
         source <- panel_sources[["panel1"]]()
-        expect_named(source, c("plot", "plot_data", "stats", "inputs"))
+        expect_named(
+            source,
+            c(
+                "plot", "plot_data", "stats", "inputs",
+                # Nothing here for the browser to photograph, so the summary
+                # carries the renderers the archive draws the images with.
+                "vector_svg", "raster_png"
+            )
+        )
         expect_null(source$plot)
         expect_equal(nrow(source$plot_data), nrow(example_heatmap_matrix))
+        expect_true(is.function(source$vector_svg))
+        expect_true(is.function(source$raster_png))
 
         # ... and the panel contributes real vector art to the figure export.
         exported <- .figure_builder_panel_svgs(
@@ -317,4 +327,71 @@ test_that("a ComplexHeatmap panel works end to end on the canvas", {
             1L
         )
     })
+})
+
+
+test_that("figureBuilderUI points its source download at its own canvas", {
+    html <- as.character(figureBuilderUI("fb"))
+
+    expect_true(grepl("viz-source-download", html, fixed = TRUE))
+    expect_true(grepl('data-viz-source-ns="fb-"', html, fixed = TRUE))
+    # Named explicitly so two builders on one page cannot photograph each
+    # other's panels.
+    expect_true(grepl('data-viz-canvas="fb-pb_canvas"', html, fixed = TRUE))
+
+    deps <- vapply(htmltools::findDependencies(figureBuilderUI("fb")),
+        function(d) d$name, character(1))
+    expect_true("viz-source-export" %in% deps)
+})
+
+
+test_that(".figure_builder_sources tags each summary with its panel id", {
+    sources <- list(
+        panel1 = reactive(list(plot = NULL, plot_data = data.frame(a = 1))),
+        panel2 = reactive(list(plot = NULL, plot_data = data.frame(b = 2)))
+    )
+    labels <- list(panel1 = "Violin #1 (mtcars)", panel2 = "Bar #2 (mtcars)")
+
+    out <- isolate(.figure_builder_sources(c("panel1", "panel2"), sources, labels))
+
+    # Named for the reader, keyed for the browser: the archive uses the label
+    # the user can edit, while the capture only ever knows the panel id.
+    expect_named(out, c("Violin #1 (mtcars)", "Bar #2 (mtcars)"))
+    expect_equal(out[["Violin #1 (mtcars)"]]$svg_key, "panel1")
+    expect_equal(out[["Bar #2 (mtcars)"]]$svg_key, "panel2")
+})
+
+
+test_that(".figure_builder_sources forwards renderers given as attributes", {
+    svg_fn <- function(width, height, res = 72) "<svg/>"
+    png_fn <- function(width, height, res = 72) as.raw(1:4)
+
+    sr <- reactive(list(plot = NULL, plot_data = data.frame(a = 1)))
+    attr(sr, "vector_svg") <- svg_fn
+    attr(sr, "raster_png") <- png_fn
+
+    out <- isolate(.figure_builder_sources("panel1", list(panel1 = sr),
+        list(panel1 = "Heatmap #1")))
+
+    # The older contract puts them on the reactive; the archive reads the
+    # summary, so they are copied across.
+    expect_identical(out[["Heatmap #1"]]$vector_svg, svg_fn)
+    expect_identical(out[["Heatmap #1"]]$raster_png, png_fn)
+})
+
+
+test_that(".figure_builder_sources drops a panel it cannot build", {
+    sources <- list(
+        panel1 = reactive(stop("panel is broken")),
+        panel2 = reactive(list(plot = NULL, plot_data = data.frame(b = 2)))
+    )
+    labels <- list(panel1 = "Broken #1", panel2 = "Bar #2")
+
+    expect_warning(
+        out <- isolate(.figure_builder_sources(c("panel1", "panel2"), sources, labels)),
+        "panel is broken"
+    )
+
+    # One bad panel must not cost the user the rest of the canvas.
+    expect_named(out, "Bar #2")
 })

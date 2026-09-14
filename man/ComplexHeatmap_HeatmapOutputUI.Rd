@@ -66,14 +66,16 @@ separated pieces (\code{originalHeatmapOutput()}, \code{subHeatmapOutput()},
 }
 \examples{
 library(VizModules)
-# Default combined widget:
-ComplexHeatmap_HeatmapOutputUI("heatmap")
-# Same widget, main heatmap on its own row above sub-heatmap + info:
-ComplexHeatmap_HeatmapOutputUI("heatmap", layout = "1|(2-3)")
-# Compact: no sub-heatmap panel, click/brush info floats near the cursor
-ComplexHeatmap_HeatmapOutputUI("heatmap", compact = TRUE)
-# Fixed pixel widths, ignoring the container:
-ComplexHeatmap_HeatmapOutputUI("heatmap", fit.width = FALSE)
+if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+    # Default combined widget:
+    ComplexHeatmap_HeatmapOutputUI("heatmap")
+    # Same widget, main heatmap on its own row above sub-heatmap + info:
+    ComplexHeatmap_HeatmapOutputUI("heatmap", layout = "1|(2-3)")
+    # Compact: no sub-heatmap panel, click/brush info floats near the cursor
+    ComplexHeatmap_HeatmapOutputUI("heatmap", compact = TRUE)
+    # Fixed pixel widths, ignoring the container:
+    ComplexHeatmap_HeatmapOutputUI("heatmap", fit.width = FALSE)
+}
 }
 \seealso{
 \code{\link[InteractiveComplexHeatmap:InteractiveComplexHeatmapOutput]{InteractiveComplexHeatmap::InteractiveComplexHeatmapOutput()}},

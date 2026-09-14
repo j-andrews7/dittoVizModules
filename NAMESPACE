@@ -50,6 +50,8 @@ export(dittoViz_yPlotApp)
 export(dittoViz_yPlotInputsUI)
 export(dittoViz_yPlotOutputUI)
 export(dittoViz_yPlotServer)
+export(draw_to_png)
+export(draw_to_svg)
 export(dumbbellPlot)
 export(dumbbellPlotApp)
 export(dumbbellPlotInputsUI)
@@ -208,7 +210,10 @@ importFrom(htmlwidgets,
   onRender,
   saveWidget
 )
-importFrom(jsonlite,toJSON)
+importFrom(jsonlite,
+  base64_dec,
+  toJSON
+)
 importFrom(methods,is)
 importFrom(plotly,
   ggplotly,
@@ -238,6 +243,7 @@ importFrom(shiny,
   checkboxInput,
   downloadButton,
   downloadHandler,
+  getDefaultReactiveDomain,
   icon,
   is.reactive,
   isolate,

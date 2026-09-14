@@ -4,7 +4,13 @@
 \alias{create_source_download_handler}
 \title{Create download handler for plot with source data}
 \usage{
-create_source_download_handler(data_list, filename_base = "source_data")
+create_source_download_handler(
+  data_list,
+  filename_base = "source_data",
+  images = TRUE,
+  output_id = "download.source",
+  session = getDefaultReactiveDomain()
+)
 }
 \arguments{
 \item{data_list}{A reactive returning either a single summary list produced
@@ -17,14 +23,56 @@ bundled into a single archive.}
 \item{filename_base}{\code{character(1)}. Base name for the downloaded \code{.zip}
 file without extension. The final filename takes the form
 \verb{<filename_base>_<Sys.Date()>.zip}.}
+
+\item{images}{\code{logical(1)}. Whether to include \code{.svg} and \code{.png} images of
+each plot. Requires the button to carry the markup \code{\link[=module_tack_ui]{module_tack_ui()}} gives
+it; a hand-rolled \code{\link[shiny:downloadButton]{shiny::downloadButton()}} without it simply gets no
+images.}
+
+\item{output_id}{\code{character(1)}. The id this handler is assigned to within
+its module, used to find the images the browser sends. Only needs changing
+if the handler is assigned to something other than \code{output$download.source}.}
+
+\item{session}{The module session. Defaults to the calling module's, which is
+what every in-package call site wants.}
 }
 \value{
 A \code{downloadHandler} object suitable for assignment to a Shiny
 output.
 }
 \description{
-Generates a Shiny \code{\link[shiny:downloadHandler]{downloadHandler()}} that bundles the interactive plot and
-its supporting data into a single \code{.zip} archive.
+Generates a Shiny \code{\link[shiny:downloadHandler]{downloadHandler()}} that bundles the interactive plot,
+images of it, and its supporting data into a single \code{.zip} archive.
+}
+\details{
+The archive holds, per plot: the interactive plot as self-contained
+HTML (\verb{<name>_plot.html}), an \verb{<name>_plot.svg} and \verb{<name>_plot.png} of
+it, and CSVs of the plot data, the statistics, and the UI inputs.
+
+The images are photographed in the browser, off the graph the user is
+looking at, so they carry every edit made after the figure was built --
+reference lines, statistical brackets, restyled axes and legends, dragged
+annotations. The capture happens between the button's click and the
+download itself, which is why the button pauses briefly before the archive
+arrives. When it cannot be done -- the capture fails, the round trip times
+out, the plot sits on a hidden tab -- the archive still downloads, without
+the images.
+
+A module whose output is not a plotly graph has nothing for the browser to
+photograph and draws itself instead, by putting a \code{vector_svg} and/or
+\code{raster_png} function of \verb{(width, height, res)} on its summary list, or on
+the reactive passed as \code{data_list}. \code{\link[=draw_to_svg]{draw_to_svg()}} and \code{\link[=draw_to_png]{draw_to_png()}}
+build one from any grid or base drawing; \code{\link[=ComplexHeatmap_HeatmapServer]{ComplexHeatmap_HeatmapServer()}}
+is the worked example.
+
+A summary may also carry \code{svg_key}, naming the captured image that belongs
+to it. The Figure Builder uses this because the browser knows a panel only
+by its id, while the summary is named after the panel's display label.
+
+One caveat worth passing on to users: a plot drawn with WebGL (the
+\code{dittoViz} scatter plot's WebGL toggle) can only be photographed as a
+raster, so its points arrive as an embedded image inside an otherwise
+vector SVG. Turning WebGL off gives a fully editable file.
 }
 \examples{
 \dontrun{
@@ -50,6 +98,9 @@ server <- function(input, output) {
 shinyApp(ui, server)
 }
 }
+\seealso{
+\code{\link[=collect_source_data]{collect_source_data()}}, \code{\link[=module_tack_ui]{module_tack_ui()}}
+}
 \author{
-Jacob Martin
+Jacob Martin, Jared Andrews
 }

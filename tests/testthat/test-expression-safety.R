@@ -420,3 +420,161 @@ test_that(".expr_check_node is what both public functions actually consult", {
     expect_true(.expr_check_node(parse(text = "gene")[[1L]], "gene"))
     expect_false(.expr_check_node(parse(text = "gene")[[1L]], "other"))
 })
+
+
+# --- Multi-statement input ----------------------------------------------------
+# A `;` or a newline in the box used to be answered by working on the first
+# statement and ignoring the rest. For safe_eval_filter() that quietly returned
+# the wrong mask; for validate_expression(), which hands its *input string* back
+# to a caller that evaluates it, everything after the `;` escaped the allowlist.
+
+test_that("validate_expression rejects multi-statement input", {
+    expect_warning(
+        res <- validate_expression("x > 1; system('id')", c("x")),
+        "single statement"
+    )
+    expect_null(res)
+
+    # The contract that matters: the unchecked text must never come back out.
+    expect_false(identical(res, "x > 1; system('id')"))
+
+    # A newline separates statements just as a semicolon does, and a
+    # textAreaInput invites exactly that.
+    expect_warning(
+        expect_null(validate_expression("x > 1\nsystem('id')", c("x"))),
+        "single statement"
+    )
+
+    # Even when every statement would pass on its own.
+    expect_warning(
+        expect_null(validate_expression("x > 1; x < 5", c("x"))),
+        "single statement"
+    )
+})
+
+test_that("safe_eval_filter rejects multi-statement input", {
+    df <- data.frame(x = 1:3)
+
+    expect_warning(
+        res <- safe_eval_filter("x > 1; x < 3", df),
+        "single statement"
+    )
+    # Previously returned FALSE TRUE TRUE -- the first clause alone, with the
+    # second silently dropped.
+    expect_null(res)
+
+    expect_warning(
+        expect_null(safe_eval_filter("x > 1\nx < 3", df)),
+        "single statement"
+    )
+})
+
+test_that("a single statement is unaffected by the multi-statement guard", {
+    df <- data.frame(x = 1:3)
+    expect_equal(safe_eval_filter("x > 1", df), c(FALSE, TRUE, TRUE))
+    expect_equal(validate_expression("x > 1", c("x")), "x > 1")
+
+    # A trailing semicolon parses to one expression, so it still works.
+    expect_equal(safe_eval_filter("x > 1;", df), c(FALSE, TRUE, TRUE))
+})
+
+
+# --- The shared walker --------------------------------------------------------
+
+test_that(".expr_check_node takes the allowlist as an argument", {
+    expr <- quote(y ~ log(x))
+
+    # The filter vocabulary has no `~`, so the default rejects a formula...
+    expect_false(.expr_check_node(expr, c("x", "y")))
+    # ...and the formula vocabulary accepts it.
+    expect_true(.expr_check_node(expr, c("x", "y"), .formula_allowed_calls()))
+
+    # The rejection rules do not vary with the vocabulary: a call in function
+    # position is refused under both.
+    expect_false(
+        .expr_check_node(quote(y ~ base::log(x)), c("x", "y"), .formula_allowed_calls())
+    )
+})
+
+test_that(".formula_allowed_calls is a pure, formula-shaped vocabulary", {
+    allowed <- .formula_allowed_calls()
+    expect_true(all(c("~", "+", "I", "poly", "log") %in% allowed))
+    forbidden <- c(
+        "system", "eval", "parse", "get", "assign", "::", "$", "[", "[[",
+        "function", "<-", "source", "library", "do.call"
+    )
+    expect_length(intersect(allowed, forbidden), 0)
+})
+
+
+test_that(".nz_value answers FALSE where nzchar() would error", {
+    # Every one of these is logical(0) under nzchar()/== "", which makes
+    # `if (...)` an "argument is of length zero" error rather than a FALSE.
+    expect_false(.nz_value(NULL))
+    expect_false(.nz_value(character(0)))
+
+    expect_false(.nz_value(""))
+    expect_false(.nz_value(NA_character_))
+    expect_false(.nz_value(c("a", "b")))
+
+    expect_true(.nz_value("x"))
+    expect_true(.nz_value("some.column"))
+})
+
+
+test_that("no module server tests a bare input with nzchar/is.na/== ''", {
+    # viz_select_input() is a custom binding that reports late, and the plot
+    # reactives only req() the x/y columns -- so group.by, fill.by, facet.by and
+    # friends are readably NULL while the plot is first built. Each of the forms
+    # below is logical(0) on a NULL, which makes `if (...)` an error rather than
+    # a FALSE; they crashed the render across a dozen modules. Use .nz_value()
+    # (for a column name) or .has_value() (for a number) instead.
+    #
+    # Checked against the deparsed bodies rather than the source files so this
+    # holds for an installed package too.
+    unsafe <- c(
+        "nzchar(input$",
+        "nzchar(isolate_fn(input$",
+        "is.na(input$",
+        "is.na(isolate_fn(input$"
+    )
+    # `!x == ""` parses as `!(x == "")`, so it deparses with the ! outermost.
+    unsafe_rx <- "!\\s*\\(?\\s*(isolate_fn\\()?input\\$[A-Za-z._0-9]+\\)?\\s*==\\s*\"\""
+
+    # Line by line, because `!is.null(x) && nzchar(x)` is a perfectly good
+    # guard and must not be flagged -- it is only a bare test that is a bug.
+    flag_lines <- function(src) {
+        lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
+        lines <- lines[!grepl("is.null", lines, fixed = TRUE)]
+        bad <- vapply(lines, function(ln) {
+            any(vapply(unsafe, function(p) grepl(p, ln, fixed = TRUE), logical(1))) ||
+                grepl(unsafe_rx, ln)
+        }, logical(1))
+        unname(trimws(lines[bad]))
+    }
+
+    ns <- asNamespace("VizModules")
+    offenders <- character()
+
+    for (nm in ls(ns, all.names = TRUE)) {
+        obj <- get(nm, envir = ns)
+        if (!is.function(obj)) {
+            next
+        }
+        hits <- flag_lines(paste(deparse(body(obj)), collapse = "\n"))
+        if (length(hits)) {
+            offenders <- c(offenders, paste0(nm, ": ", hits))
+        }
+    }
+
+    expect_equal(offenders, character())
+
+    # The tripwire has to be able to fire, or it is pinning nothing.
+    demo <- function(input) if (nzchar(input$group.by)) 1 else 2
+    expect_length(flag_lines(paste(deparse(body(demo)), collapse = "\n")), 1)
+    demo2 <- function(input) if (!input$facet.by == "") 1 else 2
+    expect_length(flag_lines(paste(deparse(body(demo2)), collapse = "\n")), 1)
+    # ...and has to leave a properly guarded read alone.
+    ok <- function(input) if (!is.null(input$x) && nzchar(input$x)) 1 else 2
+    expect_length(flag_lines(paste(deparse(body(ok)), collapse = "\n")), 0)
+})

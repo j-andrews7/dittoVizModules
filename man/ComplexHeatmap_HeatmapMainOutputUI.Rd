@@ -46,7 +46,9 @@ switch between the combined and separated forms.
 }
 \examples{
 library(VizModules)
-ComplexHeatmap_HeatmapMainOutputUI("heatmap", title = "Heatmap")
+if (requireNamespace("InteractiveComplexHeatmap", quietly = TRUE)) {
+    ComplexHeatmap_HeatmapMainOutputUI("heatmap", title = "Heatmap")
+}
 }
 \seealso{
 \code{\link[InteractiveComplexHeatmap:originalHeatmapOutput]{InteractiveComplexHeatmap::originalHeatmapOutput()}},

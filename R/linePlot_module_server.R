@@ -209,7 +209,7 @@ linePlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL, defau
 
 
         observeEvent(input$facet.by, {
-            if (!input$facet.by == "") {
+            if (.nz_value(input$facet.by)) {
                 show_input(session, c(
                     "facet.title.font.size", "facet.title.font.color", "facet.title.font.family",
                     "facet.nrow", "facet.ncol"
@@ -286,12 +286,12 @@ linePlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL, defau
             }
 
             y.adjustment <- NULL
-            if (!isolate_fn(input$y.adjustment) == "") {
+            if (.nz_value(isolate_fn(input$y.adjustment))) {
                 y.adjustment <- isolate_fn(input$y.adjustment)
             }
 
             x.adjustment <- NULL
-            if (!isolate_fn(input$x.adjustment) == "") {
+            if (.nz_value(isolate_fn(input$x.adjustment))) {
                 x.adjustment <- isolate_fn(input$x.adjustment)
             }
 
@@ -332,7 +332,7 @@ linePlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL, defau
             }
 
             facet.by <- NULL
-            if (!isolate_fn(input$facet.by) == "") {
+            if (.nz_value(isolate_fn(input$facet.by))) {
                 facet.by <- isolate_fn(input$facet.by)
             }
             facet.nrow.val <- clean_facet_dim(isolate_fn(input$facet.nrow))
@@ -454,7 +454,7 @@ linePlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NULL, defau
             } else if (dual_multiAxis) {
                 return_empty <- TRUE
                 txt <- c(txt, "You cannot have multiple inputs for both X and Y inputs simultaneously")
-            } else if (multi_axis && !(input$group.by == "")) {
+            } else if (multi_axis && .nz_value(input$group.by)) {
                 return_empty <- TRUE
                 txt <- c(txt, "You cannot have multiple inputs on x and y axis and group by at the same time")
             }

@@ -215,7 +215,7 @@ The **BoxPlot**, **ViolinPlot**, **yPlot**, and **freqPlot** modules include a *
 
 ### Export Summary Data
 
-`collect_source_data()` collects the interactive plot as HTML, its plot data, pairwise testing statistics (if applied), and UI input values into a single list, and `create_source_download_handler()` turns that into a compact zip folder of summary data for the output plot. `create_source_download_handler()` also accepts a named list of summaries (one per plot), which is how the Figure Builder bundles every plot on the canvas into one download.
+`collect_source_data()` collects the interactive plot as HTML, its plot data, pairwise testing statistics (if applied), and UI input values into a single list, and `create_source_download_handler()` turns that into a compact zip folder of summary data for the output plot. The zip also carries an SVG and a PNG of each plot, captured in the browser so they match what is on screen — every reference line, statistical bracket, and dragged annotation included. `create_source_download_handler()` also accepts a named list of summaries (one per plot), which is how the Figure Builder bundles every plot on the canvas into one download.
 
 ### Supported Tests
 

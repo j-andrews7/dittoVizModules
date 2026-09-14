@@ -36,9 +36,16 @@ A module whose output is not a plotly graph can still contribute to the SVG
 figure export by attaching a \code{vector_svg} attribute to the reactive its
 server returns: a \verb{function(width, height, res)} yielding an \verb{<svg>}
 element drawn at that pixel size, which is spliced into the figure in place
-of the \code{Plotly.toImage()} result. \code{.draw_to_svg()} builds one from any grid
-or base drawing; \code{ComplexHeatmap_HeatmapServer()} is the worked example. A
-panel whose module attaches nothing simply contributes no artwork.}
+of the \code{Plotly.toImage()} result. \code{\link[=draw_to_svg]{draw_to_svg()}} builds one from any grid
+or base drawing; \code{\link[=ComplexHeatmap_HeatmapServer]{ComplexHeatmap_HeatmapServer()}} is the worked example. A
+panel whose module attaches nothing simply contributes no artwork.
+
+The same renderers feed the source archive, which additionally wants a
+\code{raster_png} counterpart returning PNG bytes (see \code{\link[=draw_to_png]{draw_to_png()}}). Either
+can be given as an attribute on the reactive, as here, or as a field on the
+summary list the reactive returns -- the latter being order-independent,
+since the summary is rebuilt on every download. See
+\code{\link[=create_source_download_handler]{create_source_download_handler()}}.}
 }
 \value{
 Invisibly returns \code{NULL}; called for its side effects (wiring up the
