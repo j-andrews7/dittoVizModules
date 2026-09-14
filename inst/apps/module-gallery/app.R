@@ -70,8 +70,6 @@ module_data <- list(
     radar    = example_skills,
     scatter  = example_sales,
     splitbar = example_bar,
-
-    violin   = example_demographics,
     yplot    = example_demographics
 )
 
@@ -202,14 +200,6 @@ module_registry <- list(
         output_ui = plotthis_SplitBarPlotOutputUI,
         server_fn = plotthis_SplitBarPlotServer,
         defaults  = list("x.data" = "Score", "y.data" = "Group")
-    ),
-    list(
-        label     = "Violin",
-        id        = "violin",
-        inputs_ui = plotthis_ViolinPlotInputsUI,
-        output_ui = plotthis_ViolinPlotOutputUI,
-        server_fn = plotthis_ViolinPlotServer,
-        defaults  = list("x.data" = "department", "y.data" = "salary")
     ),
     list(
         label     = "yPlot",

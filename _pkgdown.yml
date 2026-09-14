@@ -107,14 +107,6 @@ reference:
       - plotthis_BoxPlotOutputUI
       - plotthis_BoxPlotServer
 
-  - title: "ViolinPlot Module"
-    desc: "plotthis-based interactive violin plot module."
-    contents:
-      - plotthis_ViolinPlotApp
-      - plotthis_ViolinPlotInputsUI
-      - plotthis_ViolinPlotOutputUI
-      - plotthis_ViolinPlotServer
-
   - title: "DensityPlot Module"
     desc: "plotthis-based interactive density plot module."
     contents:

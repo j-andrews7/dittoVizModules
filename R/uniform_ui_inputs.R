@@ -441,7 +441,7 @@ uniform_axes_inputs_ui <- function(ns, defaults = NULL, include.rotate = FALSE, 
 #' Generate uniform Stats input UI
 #'
 #' Creates a standardized tagList of statistical testing inputs for use across
-#' plot modules that support pairwise comparisons (BoxPlot, ViolinPlot, yPlot).
+#' plot modules that support pairwise comparisons (BoxPlot, yPlot, freqPlot).
 #'
 #' @param ns A namespace function, typically created by `NS(id)`.
 #' @param defaults A named list of default values for the inputs.

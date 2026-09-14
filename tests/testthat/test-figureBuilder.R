@@ -350,14 +350,14 @@ test_that(".figure_builder_sources tags each summary with its panel id", {
         panel1 = reactive(list(plot = NULL, plot_data = data.frame(a = 1))),
         panel2 = reactive(list(plot = NULL, plot_data = data.frame(b = 2)))
     )
-    labels <- list(panel1 = "Violin #1 (mtcars)", panel2 = "Bar #2 (mtcars)")
+    labels <- list(panel1 = "Box #1 (mtcars)", panel2 = "Bar #2 (mtcars)")
 
     out <- isolate(.figure_builder_sources(c("panel1", "panel2"), sources, labels))
 
     # Named for the reader, keyed for the browser: the archive uses the label
     # the user can edit, while the capture only ever knows the panel id.
-    expect_named(out, c("Violin #1 (mtcars)", "Bar #2 (mtcars)"))
-    expect_equal(out[["Violin #1 (mtcars)"]]$svg_key, "panel1")
+    expect_named(out, c("Box #1 (mtcars)", "Bar #2 (mtcars)"))
+    expect_equal(out[["Box #1 (mtcars)"]]$svg_key, "panel1")
     expect_equal(out[["Bar #2 (mtcars)"]]$svg_key, "panel2")
 })
 

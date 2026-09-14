@@ -24,7 +24,17 @@ The one where we make the heatmap module not suck and stop accidentallybutcherin
 * Alter `ComplexHeatmap_HeatmapApp()` default data so the column annotation, split, and filter features are usable out of the box.
 * `safe_eval_filter()` and `validate_expression()` gained a wider shared vocabulary: `grepl`, `startsWith`, `endsWith`, `substr`, `nchar`, `toupper`, `tolower`, `trimws`, `abs`, `round`, and `xor`. All are pure, so the sandbox is unchanged. The two functions previously carried duplicate copies of the allowlist and AST walker and now share one.
 
+## Deprecations and Removals
+
+* Removed the `plotthis_ViolinPlot` module - `plotthis_ViolinPlotApp()`, `plotthis_ViolinPlotInputsUI()`, `plotthis_ViolinPlotOutputUI()` and `plotthis_ViolinPlotServer()` (#358). `plotthis` rolled its own geom for this in v0.14.0, which broke the module since it didn't convert them via `ggplotly()`. More effort than it's worth to fix, since `yPlot` works well.
+  * Use `dittoViz_yPlot` instead, with `defaults = list(plots = "vlnplot")` (add `"boxplot"` / `"jitter"` for the inner box and points). 
+
 ## Bug Fixes
+
+* Boxes, points and significance brackets now line up when a `color.by` group is missing from some `group.by` categories (#356). The new `.align_box_positions()` puts the boxes back on ggplot's coordinates and hands plotly `boxmode = "overlay"`, which also retires the faceting workaround it replaces. Affects the `yPlot`, `freqPlot` and `BoxPlot` modules.
+  * Significance brackets were placed by a third formula of their own (global group count, a hardcoded span, endpoints at the extremes rather than slot centres) and now use the same dodge as the boxes.
+  * A comparison against a group with no data in that category has no box to bracket and came back with an NA p-value; those brackets are no longer drawn instead of being drawn as "NA" at an invented position.
+  * The `boxgap`/`boxgroupgap` layout attributes plotly's schema rejects are no longer set, so rebuilding a box plot no longer throws a ton of warnings.
 
 * Stopped the package's stylesheets screwing up CSS that they shouldn't affect (#355). Shocker, `multiColorPicker`'s particular quirks resulted in leaks that could affect a host app in annoying ways: 
   * `multiColorPicker.css` styled `.selectize-dropdown`, `.option` and `.optgroup-header` (selectize's own generic class names) because the picker's dropdown is parented to `<body>` and could not be scoped to the widget. Every stock `selectInput()` and DT column filter on the page was restyled, most visibly rendering long dropdowns as an empty panel. The picker now tags its dropdown `.mc-palette-dropdown` (via selectize's `dropdownClass`) and every rule is scoped to it. As every plot module renders a colour picker, this affected any app using any module.

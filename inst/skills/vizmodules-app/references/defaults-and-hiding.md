@@ -20,7 +20,7 @@ module help page first.
 `hide.tabs` to both the UI and the server, so you can set them in one place:
 
 ```r
-plotthis_ViolinPlotApp(
+plotthis_BoxPlotApp(
     defaults    = list(x.data = "Species", y.data = "Sepal.Length"),
     hide.inputs = "group.by",
     hide.tabs   = "Plotly"
@@ -34,7 +34,7 @@ mapping group level to colour, so a plot can open on a specific palette while ev
 stays editable:
 
 ```r
-plotthis_ViolinPlotServer("v", data = reactive(example_rnaseq),
+plotthis_BoxPlotServer("b", data = reactive(example_rnaseq),
     defaults = list(palette.colours = c(Healthy = "#0072B2", Disease = "red")))
 ```
 
@@ -104,7 +104,7 @@ so a `defaults` entry for an unexposed key does nothing at all — no error, no 
 still initialised and still feed the plot — hiding is cosmetic, never disabling.
 
 ```r
-plotthis_ViolinPlotServer("v", data = reactive(example_rnaseq),
+plotthis_BoxPlotServer("b", data = reactive(example_rnaseq),
     defaults    = list(group.by = "condition"),
     hide.inputs = "group.by",
     hide.tabs   = c("Plotly", "Lines"))

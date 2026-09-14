@@ -48,8 +48,8 @@ reactive**, so in an app you can often just capture the server's return value in
 building your own:
 
 ```r
-src <- plotthis_ViolinPlotServer("v", data = reactive(example_rnaseq))
-output$dl <- create_source_download_handler(src, filename_base = "violin_source")
+src <- plotthis_BoxPlotServer("b", data = reactive(example_rnaseq))
+output$dl <- create_source_download_handler(src, filename_base = "box_source")
 ```
 
 Every module already shows a **Source Download** button in its control block (the

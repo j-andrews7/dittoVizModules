@@ -473,7 +473,7 @@ Modules for categorical-vs-numeric plots (box, violin, etc.) can include an opti
 | `generate_pair_strings()` | Build `"A vs B"` strings for the comparison selector |
 | `parse_pair_strings()` | Convert selected pair strings back to list of length-2 vectors |
 
-See the `plotthis_BoxPlotServer`, `plotthis_ViolinPlotServer`, or `dittoViz_yPlotServer` implementations for complete integration examples.
+See the `plotthis_BoxPlotServer`, `dittoViz_yPlotServer`, or `dittoViz_freqPlotServer` implementations for complete integration examples.
 
 ## Gallery App and Figure Builder
 

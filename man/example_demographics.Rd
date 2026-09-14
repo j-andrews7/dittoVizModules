@@ -26,7 +26,7 @@ example_demographics
 }
 \description{
 A simulated employee survey dataset with 500 rows spanning six departments
-and four job levels. Designed to showcase violin, box, yPlot, density, and
+and four job levels. Designed to showcase box, yPlot, density, and
 histogram plot modules with realistic numeric distributions.
 }
 \author{

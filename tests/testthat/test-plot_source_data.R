@@ -327,13 +327,13 @@ test_that(".write_source_zip sanitises a summary name into the filenames", {
         f,
         stats::setNames(
             list(list(plot = NULL, plot_data = data.frame(a = 1))),
-            "Violin #1 (mtcars)"
+            "Box #1 (mtcars)"
         ),
         images = NULL
     )
     # Every run of disallowed characters collapses to one underscore, so the
     # trailing ")" leaves a separator of its own before the file's own suffix.
-    expect_setequal(zip::zip_list(f)$filename, "Violin_1_mtcars__plot_data.csv")
+    expect_setequal(zip::zip_list(f)$filename, "Box_1_mtcars__plot_data.csv")
 })
 
 

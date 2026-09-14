@@ -240,13 +240,6 @@ figureBuilderApp <- function(data_list = NULL,
             server_fn = plotthis_SplitBarPlotServer,
             defaults = list("x.data" = "Score", "y.data" = "Group")
         ),
-        violin = list(
-            label = "Violin Plot", dataset = "example_demographics",
-            inputs_ui = plotthis_ViolinPlotInputsUI,
-            output_ui = plotthis_ViolinPlotOutputUI,
-            server_fn = plotthis_ViolinPlotServer,
-            defaults = list("x.data" = "department", "y.data" = "salary")
-        ),
         yplot = list(
             label = "yPlot", dataset = "example_demographics",
             inputs_ui = dittoViz_yPlotInputsUI,

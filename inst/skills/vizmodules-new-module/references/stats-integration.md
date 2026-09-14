@@ -106,7 +106,7 @@ All in `R/stat_helper.R`, all exported:
 first factor level at `x = 1`), which is what building the figure with `ggplot2` +
 `ggplotly()` gives you. A figure built another way will place brackets wrongly.
 
-`plotthis_BoxPlotServer`, `plotthis_ViolinPlotServer`, and `dittoViz_yPlotServer` are the
+`plotthis_BoxPlotServer`, `dittoViz_yPlotServer`, and `dittoViz_freqPlotServer` are the
 complete worked examples.
 
 ## Known limits

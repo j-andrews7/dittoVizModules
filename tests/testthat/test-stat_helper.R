@@ -419,3 +419,115 @@ test_that("the comparison layout matches what compute_pairwise_stats runs", {
     expect_equal(layout$group1, stats_df$group1)
     expect_equal(layout$group2, stats_df$group2)
 })
+
+test_that(".get_x_pos dodges only the groups present at that x category", {
+    df <- rbind(
+        data.frame(tissue = "blood", grp = c("A", "B", "C")),
+        data.frame(tissue = "lung", grp = c("A", "B"))
+    )
+    df$grp <- factor(df$grp, levels = c("A", "B", "C"))
+    x.order <- c("blood", "lung")
+
+    pos <- function(group_label, x_level, dodge.width = 1) {
+        VizModules:::.get_x_pos(
+            group_label, x_level, x.order, "grp", df,
+            x = "tissue", dodge.width = dodge.width
+        )
+    }
+
+    # blood splits three ways...
+    expect_equal(pos("A", "blood"), 1 - 1 / 3, tolerance = 1e-8)
+    expect_equal(pos("B", "blood"), 1, tolerance = 1e-8)
+    expect_equal(pos("C", "blood"), 1 + 1 / 3, tolerance = 1e-8)
+    # ...lung only two, because C is not there. This is the #356 case: the old
+    # formula used the global group count and put A/B at 1.6/2.0 instead.
+    expect_equal(pos("A", "lung"), 2 - 0.25, tolerance = 1e-8)
+    expect_equal(pos("B", "lung"), 2 + 0.25, tolerance = 1e-8)
+
+    # dodge.width scales the offsets, as position_dodge() does.
+    expect_equal(pos("A", "lung", dodge.width = 0.5), 2 - 0.125, tolerance = 1e-8)
+
+    # Without a grouping column the label is an x category itself.
+    expect_equal(
+        VizModules:::.get_x_pos("lung", NA_character_, x.order, NULL, df),
+        2
+    )
+})
+
+test_that(".get_x_pos agrees with the positions .align_box_positions uses", {
+    df <- withr::with_seed(7, {
+        d <- rbind(
+            data.frame(tissue = "blood", grp = rep(c("A", "B", "C"), each = 6)),
+            data.frame(tissue = "lung", grp = rep(c("A", "B"), each = 6))
+        )
+        d$val <- rnorm(nrow(d))
+        d$tissue <- factor(d$tissue, levels = c("blood", "lung"))
+        d$grp <- factor(d$grp, levels = c("A", "B", "C"))
+        d
+    })
+
+    fig <- plotly::ggplotly(plotthis::BoxPlot(
+        df,
+        x = "tissue", y = "val", group_by = "grp"
+    ))
+    aligned <- VizModules:::.align_box_positions(fig, dodge.width = 1, box.width = 0.8)
+
+    for (trace in aligned$x$data) {
+        if (is.null(trace$type) || trace$type != "box") next
+        for (x_level in levels(df$tissue)) {
+            expected <- VizModules:::.get_x_pos(
+                trace$name, x_level, levels(df$tissue), "grp", df,
+                x = "tissue", dodge.width = 1
+            )
+            drawn <- unique(as.numeric(trace$x))
+            drawn <- drawn[round(drawn) == match(x_level, levels(df$tissue))]
+            if (length(drawn) == 0) next
+            expect_equal(drawn, expected, tolerance = 1e-8,
+                info = sprintf("group %s at %s", trace$name, x_level)
+            )
+        }
+    }
+})
+
+test_that("comparisons against a group absent from an x category are not drawn", {
+    df <- withr::with_seed(3, {
+        d <- rbind(
+            data.frame(tissue = "blood", grp = rep(c("A", "B", "C"), each = 6)),
+            data.frame(tissue = "lung", grp = rep(c("A", "B"), each = 6))
+        )
+        d$val <- rnorm(nrow(d))
+        d$tissue <- factor(d$tissue, levels = c("blood", "lung"))
+        d$grp <- factor(d$grp, levels = c("A", "B", "C"))
+        d
+    })
+
+    # All-pairs comparisons include A vs C and B vs C at "lung", where C has no
+    # data at all -- those come back with an NA p-value and no box to bracket.
+    stats_df <- compute_pairwise_stats(df, x = "tissue", y = "val", group.by = "grp")
+    expect_true(any(is.na(stats_df$p.adj)))
+
+    packed <- VizModules:::.assign_bracket_levels(
+        stats_df[, c("group1", "group2", "x_level", "facet_level", "p.adj", "p.signif")],
+        levels(df$tissue), "grp", df, 0.025,
+        x = "tissue", dodge.width = 1
+    )
+
+    expect_false(any(is.na(packed$x0_pos)))
+    expect_false(any(is.na(packed$x1_pos)))
+    expect_false(any(is.na(packed$y_level)))
+    expect_false(any(packed$x_level == "lung" & packed$group2 == "C"))
+    # The three comparisons at "blood" plus A vs B at "lung" remain.
+    expect_equal(nrow(packed), 4)
+
+    # And the whole path builds rather than erroring on the NA positions.
+    fig <- dittoViz::yPlot(
+        df,
+        var = "val", group.by = "tissue", color.by = "grp",
+        plots = c("boxplot", "jitter"), do.hover = TRUE
+    )
+    result <- create_stat_annotations(
+        stats_df = stats_df, fig = fig, df = df, x = "tissue", y = "val",
+        display = "p.adj", hide.ns = FALSE, group.by = "grp", dodge.width = 1
+    )
+    expect_length(result$annotations, 4)
+})

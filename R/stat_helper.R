@@ -306,6 +306,10 @@ compute_pairwise_stats <- function(df, x, y,
 #' @param bracket.inset Numeric; fixed amount to inset each bracket endpoint
 #'   from the group center position. Creates visual separation between
 #'   adjacent brackets at the same y-level. Default 0.025.
+#' @param dodge.width Numeric; width the `group.by` levels at one x category are
+#'   dodged across, matching the dodge the plot was built with. Brackets between
+#'   two `group.by` levels are placed on the same slot centres the boxes sit on,
+#'   so this has to be the plot's dodge or they will not line up. Default 1.
 #'
 #' @return A list with components:
 #'   \describe{
@@ -354,7 +358,8 @@ create_stat_annotations <- function(stats_df, fig, df, x, y,
                                      font.size = 12,
                                      step.increase = 0.06,
                                      text.bump = 0.04,
-                                     bracket.inset = 0.025) {
+                                     bracket.inset = 0.025,
+                                     dodge.width = 1) {
     empty_result <- list(annotations = list(), shapes = list(), y.max = NULL)
 
     if (is.null(stats_df) || nrow(stats_df) == 0) {
@@ -432,7 +437,9 @@ create_stat_annotations <- function(stats_df, fig, df, x, y,
 
         # Position, sort, inset and pack the brackets into non-overlapping levels
         facet_rows <- .assign_bracket_levels(
-            facet_rows, x.order, group.by, df, bracket.inset
+            facet_rows, x.order, group.by,
+            .facet_subset(df, facet.by, flev), bracket.inset,
+            x = x, dodge.width = dodge.width
         )
 
         # Generate bracket shapes and annotations
@@ -473,22 +480,63 @@ create_stat_annotations <- function(stats_df, fig, df, x, y,
 
 # --- Internal helpers for create_stat_annotations ----------------------------
 
-#' Get x-position for a group label on plotly categorical axis
+#' Rows of one facet panel, or the whole frame when not faceted
+#'
+#' `ggplot2` dodges each panel on its own, so which groups are present has to be
+#' asked of the panel rather than of the whole data set.
+#'
 #' @noRd
-.get_x_pos <- function(group_label, x_level, x.order, group.by, df) {
-    if (!is.null(group.by) && nzchar(group.by) && !is.na(x_level)) {
-        x_idx <- match(x_level, x.order)
-        grp_levels <- unique(as.character(df[[group.by]]))
-        n_grps <- length(grp_levels)
-        grp_idx <- match(group_label, grp_levels) - 1
-        if (n_grps == 1) {
-            return(x_idx)
-        }
-        offset <- (grp_idx / (n_grps - 1) - 0.5) * 0.8
-        x_idx + offset
-    } else {
-        match(group_label, x.order)
+.facet_subset <- function(df, facet.by, facet_level) {
+    if (is.null(facet.by) || length(facet.by) != 1 || is.na(facet.by) ||
+        !nzchar(facet.by) || !facet.by %in% names(df) || is.na(facet_level)) {
+        return(df)
     }
+    df[as.character(df[[facet.by]]) == facet_level, , drop = FALSE]
+}
+
+#' Group levels present at one x category, in the order ggplot2 dodges them
+#'
+#' `ggplot2` orders discrete levels by the factor's levels, or alphabetically
+#' for a character column, and dodges only the levels actually present at that
+#' x position.
+#'
+#' @noRd
+.groups_at_x <- function(df, x, group.by, x_level) {
+    col <- df[[group.by]]
+    lv <- if (is.factor(col)) levels(col) else sort(unique(as.character(col)))
+    if (is.null(x) || length(x) != 1 || is.na(x) || !x %in% names(df)) {
+        return(lv)
+    }
+    at_x <- as.character(col)[as.character(df[[x]]) == x_level]
+    lv[lv %in% at_x]
+}
+
+#' Get x-position for a group label on plotly categorical axis
+#'
+#' Mirrors `ggplot2`'s `position_dodge()`: the levels present at this x category
+#' split `dodge.width` between them and each sits at the centre of its slot. It
+#' has to agree with [.align_box_positions()], or the brackets do not span the
+#' boxes they were computed from.
+#'
+#' @noRd
+.get_x_pos <- function(group_label, x_level, x.order, group.by, df,
+                       x = NULL, dodge.width = 1) {
+    if (is.null(group.by) || !nzchar(group.by) || is.na(x_level)) {
+        return(match(group_label, x.order))
+    }
+    x_idx <- match(x_level, x.order)
+    present <- .groups_at_x(df, x, group.by, x_level)
+    n_grps <- length(present)
+    if (n_grps <= 1) {
+        return(x_idx)
+    }
+    slot <- match(group_label, present)
+    if (is.na(slot)) {
+        # The group is not in this x category, so it has no box and no position.
+        # .assign_bracket_levels() drops the comparison on the strength of this.
+        return(NA_real_)
+    }
+    x_idx + dodge.width * ((slot - 0.5) / n_grps - 0.5)
 }
 
 #' Build omnibus test annotation (ANOVA / Kruskal-Wallis)
@@ -596,16 +644,38 @@ create_stat_annotations <- function(stats_df, fig, df, x, y,
 #' @return `facet_rows` sorted by span, with `x0_draw`/`x1_draw` endpoints and a
 #'   `y_level` column.
 #' @noRd
-.assign_bracket_levels <- function(facet_rows, x.order, group.by, df, bracket.inset) {
+.assign_bracket_levels <- function(facet_rows, x.order, group.by, df, bracket.inset,
+                                   x = NULL, dodge.width = 1) {
     # Compute x-positions and sort by gap
+    pos_args <- list(
+        x.order = x.order, group.by = group.by, df = df,
+        x = x, dodge.width = dodge.width
+    )
     facet_rows$x0_pos <- mapply(
         .get_x_pos, facet_rows$group1, facet_rows$x_level,
-        MoreArgs = list(x.order = x.order, group.by = group.by, df = df)
+        MoreArgs = pos_args
     )
     facet_rows$x1_pos <- mapply(
         .get_x_pos, facet_rows$group2, facet_rows$x_level,
-        MoreArgs = list(x.order = x.order, group.by = group.by, df = df)
+        MoreArgs = pos_args
     )
+    # A comparison against a group that has no data at this x category has no box
+    # to bracket, and .get_x_pos() reports that as an NA position. Those rows also
+    # carry an NA p-value, so drop them rather than drawing an "NA" bracket at a
+    # made-up position. Dropping here keeps the height stat_bracket_y_max()
+    # reserves equal to the height the brackets are drawn at.
+    drawable <- !is.na(facet_rows$x0_pos) & !is.na(facet_rows$x1_pos)
+    facet_rows <- facet_rows[drawable, , drop = FALSE]
+    if (nrow(facet_rows) == 0) {
+        facet_rows$gap <- numeric(0)
+        facet_rows$x0_raw <- numeric(0)
+        facet_rows$x1_raw <- numeric(0)
+        facet_rows$x0_draw <- numeric(0)
+        facet_rows$x1_draw <- numeric(0)
+        facet_rows$y_level <- integer(0)
+        return(facet_rows)
+    }
+
     facet_rows$gap <- abs(facet_rows$x1_pos - facet_rows$x0_pos)
     facet_rows <- facet_rows[order(facet_rows$gap), ]
 
@@ -796,6 +866,9 @@ create_stat_annotations <- function(stats_df, fig, df, x, y,
 #'   label. Default 0.04.
 #' @param bracket.inset Numeric; endpoint inset, which affects how tightly
 #'   brackets pack onto a level. Default 0.025.
+#' @param dodge.width Numeric; width the `group.by` levels at one x category are
+#'   dodged across. Match the plot's, or the brackets will not line up with the
+#'   boxes. Default 1.
 #' @param hide.ns Logical; whether non-significant brackets are dropped before
 #'   drawing. When `TRUE` the tests are run so only the surviving comparisons
 #'   are counted. Default `FALSE`.
@@ -823,7 +896,7 @@ stat_bracket_y_max <- function(df, x, y, pairs = NULL, group.by = NULL,
                                bracket.inset = 0.025,
                                hide.ns = FALSE, sig.threshold = 0.05,
                                test = "wilcox.test", p.adjust.method = "holm",
-                               paired = FALSE) {
+                               paired = FALSE, dodge.width = 1) {
     if (is.null(df) || !is.data.frame(df) || nrow(df) == 0) {
         return(NULL)
     }
@@ -870,7 +943,8 @@ stat_bracket_y_max <- function(df, x, y, pairs = NULL, group.by = NULL,
     }
 
     levels_used <- .bracket_level_count(
-        df, x, pairs, group.by, facet.by, per.facet, bracket.inset, rows
+        df, x, pairs, group.by, facet.by, per.facet, bracket.inset, rows,
+        dodge.width = dodge.width
     )
     if (levels_used < 1) {
         return(NULL)
@@ -891,7 +965,7 @@ stat_bracket_y_max <- function(df, x, y, pairs = NULL, group.by = NULL,
 #' @return An integer; 0 when nothing would be drawn.
 #' @noRd
 .bracket_level_count <- function(df, x, pairs, group.by, facet.by, per.facet,
-                                 bracket.inset, rows = NULL) {
+                                 bracket.inset, rows = NULL, dodge.width = 1) {
     if (is.null(rows)) {
         faceted <- !is.null(facet.by) && length(facet.by) == 1 && !is.na(facet.by) &&
             nzchar(facet.by) && facet.by %in% names(df) && isTRUE(per.facet)
@@ -926,7 +1000,9 @@ stat_bracket_y_max <- function(df, x, y, pairs = NULL, group.by = NULL,
         if (nrow(facet_rows) == 0) next
 
         packed <- .assign_bracket_levels(
-            facet_rows, x.order, group.by, df, bracket.inset
+            facet_rows, x.order, group.by,
+            .facet_subset(df, facet.by, flev), bracket.inset,
+            x = x, dodge.width = dodge.width
         )
         levels_here <- suppressWarnings(max(packed$y_level, na.rm = TRUE))
         if (is.finite(levels_here) && levels_here > max_level) {
@@ -946,7 +1022,8 @@ stat_bracket_y_max <- function(df, x, y, pairs = NULL, group.by = NULL,
 #' back to the tab's own defaults, which matters while the tab has yet to be
 #' rendered.
 #'
-#' @param df,x,y,group.by,facet.by,per.facet Passed to [stat_bracket_y_max()].
+#' @param df,x,y,group.by,facet.by,per.facet,dodge.width Passed to
+#'   [stat_bracket_y_max()].
 #' @param input The Shiny `input` object from inside `moduleServer()`.
 #'
 #' @return A single number, or `NULL` when no brackets would be drawn.
@@ -955,7 +1032,7 @@ stat_bracket_y_max <- function(df, x, y, pairs = NULL, group.by = NULL,
 #' @rdname INTERNAL_stat_bracket_headroom
 #' @keywords internal
 .stat_bracket_headroom <- function(df, x, y, group.by = NULL, facet.by = NULL,
-                                   per.facet = TRUE, input) {
+                                   per.facet = TRUE, input, dodge.width = 1) {
     num_or <- function(value, fallback) {
         if (is.null(value) || length(value) != 1 || is.na(value) || !is.numeric(value)) {
             fallback
@@ -985,7 +1062,8 @@ stat_bracket_y_max <- function(df, x, y, pairs = NULL, group.by = NULL,
         sig.threshold = num_or(input$stat.sig.threshold, 0.05),
         test = chr_or(input$stat.test, "wilcox.test"),
         p.adjust.method = chr_or(input$stat.p.adjust, "holm"),
-        paired = isTRUE(input$stat.paired)
+        paired = isTRUE(input$stat.paired),
+        dodge.width = dodge.width
     )
 }
 

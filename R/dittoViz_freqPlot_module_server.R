@@ -321,7 +321,8 @@ dittoViz_freqPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NU
             .stat_bracket_headroom(
                 df = summ, x = "grouping", y = y.col,
                 group.by = .freq_stats_group_col(input$group.by, input$color.by),
-                facet.by = "label", per.facet = TRUE, input = input
+                facet.by = "label", per.facet = TRUE, input = input,
+                dodge.width = 1 - .box_num(input$boxgap, 0.3)
             )
         }
 
@@ -556,6 +557,11 @@ dittoViz_freqPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NU
                 strip.background = element_blank()
             )
 
+            # One dodge width for the whole figure: the ggplot layers below, the box
+            # traces afterwards, and the stat brackets all have to agree on it.
+            boxgap <- .box_num(isolate_fn(input$boxgap), 0.3)
+            boxgroupgap <- .box_num(isolate_fn(input$boxgroupgap), 0.2)
+
             p <- .with_stable_seed(freqPlot(
                 data_frame = df,
                 var = var.col,
@@ -586,7 +592,7 @@ dittoViz_freqPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NU
                 jitter.size = isolate_fn(input$jitter.size),
                 jitter.width = isolate_fn(input$jitter.width),
                 jitter.color = isolate_fn(input$jitter.color),
-                jitter.position.dodge = 1 - isolate_fn(input$boxgap),
+                jitter.position.dodge = 1 - boxgap,
                 boxplot.color = isolate_fn(input$boxplot.color),
                 # Hide outliers when jitter points are shown (to avoid
                 # double-plotting) or when the user disables them.
@@ -596,7 +602,7 @@ dittoViz_freqPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NU
                 boxplot.lineweight = isolate_fn(input$boxplot.lineweight),
                 vlnplot.lineweight = isolate_fn(input$vlnplot.lineweight),
                 vlnplot.scaling = isolate_fn(input$vlnplot.scaling),
-                vlnplot.width = 1 - isolate_fn(input$boxgap),
+                vlnplot.width = 1 - boxgap,
                 ridgeplot.lineweight = isolate_fn(input$ridgeplot.lineweight),
                 ridgeplot.scale = isolate_fn(input$ridgeplot.scale),
                 # Blanking the field reports NULL, which would collapse the
@@ -609,18 +615,7 @@ dittoViz_freqPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NU
                 theme = theme_style
             ))
 
-            # freqPlot() renames the grouping column to "grouping" and passes the
-            # original through under its own name, so the x-axis and the fill are
-            # always different columns even when the user picked one variable for
-            # both. Compare what the user chose, not the internal names.
-            boxmode <- if (!is.null(color.col) && !identical(color.col, group.col)) "group" else "overlay"
-
-            fig <- p |>
-                layout(
-                    boxmode = boxmode,
-                    boxgap = isolate_fn(input$boxgap),
-                    boxgroupgap = isolate_fn(input$boxgroupgap)
-                )
+            fig <- p
 
             # Always faceted, one panel per level of the frequency variable.
             fig <- apply_facet_subplot_spacing(
@@ -630,7 +625,16 @@ dittoViz_freqPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NU
             )
             fig <- apply_title_layout(fig, input, isolate_fn,
                 title_y = 0.98, title_x = isolate_fn(input$axis.title.horizontal.position))
-            fig <- .fix_boxplot_facet_positions(fig)
+            # Put the boxes back on the coordinates ggplot dodged them to, which is
+            # where the jitter and violin traces already are. The dodge width has to
+            # be the one freqPlot() built the ggplot with: boxplot.position.dodge and
+            # jitter.position.dodge both default to vlnplot.width, passed as
+            # 1 - boxgap above.
+            fig <- .align_box_positions(
+                fig,
+                dodge.width = 1 - boxgap,
+                box.width = 1 - boxgroupgap
+            )
 
             xaxis_style <- create_axis_styles(input, axis_side = "x", isolate_fn = isolate_fn)
             yaxis_style <- create_axis_styles(input, axis_side = "y", isolate_fn = isolate_fn)
@@ -688,7 +692,10 @@ dittoViz_freqPlotServer <- function(id, data, hide.inputs = NULL, hide.tabs = NU
                     group.by = stats.group, facet.by = "label",
                     step.increase = isolate_fn(input$stat.step.increase),
                     text.bump = isolate_fn(input$stat.text.bump),
-                    bracket.inset = isolate_fn(input$stat.bracket.inset)
+                    bracket.inset = isolate_fn(input$stat.bracket.inset),
+                    # Brackets between two groups sit on the same slot centres
+                    # .align_box_positions() puts the boxes on.
+                    dodge.width = 1 - boxgap
                 )
 
                 fig <- apply_stat_annotations(fig, stat_result,

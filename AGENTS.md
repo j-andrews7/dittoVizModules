@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-**VizModules** is an R package providing interactivity-first Shiny modules for common plot types. It ships ~18 plot modules (e.g. scatter, bar, box, violin, dot, density, histogram, area, line, pie, radar, dumbbell, parallel coordinates, split bar, y-plot, heatmap, freqplot, figureBuilder), a reusable `dataFilter` module, and custom inputs for color selection and dynamic feature generation. Built on dittoViz and plotthis, all plots use plotly for interactive features (except for ComplexHeatmap_Heatmap module).
+**VizModules** is an R package providing interactivity-first Shiny modules for common plot types. It ships ~17 plot modules (e.g. scatter, bar, box, dot, density, histogram, area, line, pie, radar, dumbbell, parallel coordinates, split bar, y-plot, heatmap, freqplot, figureBuilder), a reusable `dataFilter` module, and custom inputs for color selection and dynamic feature generation. Built on dittoViz and plotthis, all plots use plotly for interactive features (except for ComplexHeatmap_Heatmap module).
 
 **Stack**: R 4.6.1+, Shiny, roxygen2 | **Version**: 0.5.0.9000 (dev) | **License**: MIT
 
@@ -124,5 +124,6 @@ Anything in Suggests must be reached through `requireNamespace(..., quietly = TR
 - Avoid `sapply` usage, it is unsafe in package code.
 - A Shiny input that has not reported yet is `NULL`, and both `nzchar(NULL)` and `NULL == ""` are `logical(0)`, which makes `if (...)` an error rather than a `FALSE`. Use the internal `.nz_value()` predicate for "is this input set to a non-empty string?".
 - User-typed expressions (filters, highlights, model formulas) go through `safe_eval_filter()` / `validate_expression()` / `.safe_build_model()`, which share one AST walker and allowlist in `R/parse_utils.R`. Never add a second copy of that allowlist, and never widen it with anything impure.
+- Use the r-lsp plugin if available rather than grep and such where possible.
 
 These instructions are a starting point, not an authority — verify against the code before relying on any specific claim here, and correct this file when you find it stale.

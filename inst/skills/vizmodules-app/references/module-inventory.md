@@ -21,7 +21,6 @@ uniform across modules** — check the row before writing a key.
 | `plotthis_DotPlot` | `plotthis::DotPlot` | `x.data` `y.data` `fill.by` `size.by` `facet.by` | `palette.name` (continuous) | — |
 | `plotthis_Histogram` | `plotthis::Histogram` | `x.data` `group.by` `facet.by` | `palette.colours` | — |
 | `plotthis_SplitBarPlot` | `plotthis::SplitBarPlot` | `x.data` `y.data` `fill.by` `split.by` `facet.by` `x.min` `x.max` | `palette.colours` | — |
-| `plotthis_ViolinPlot` | `plotthis::ViolinPlot` | `x.data` `y.data` `group.by` `facet.by` `y.min` `y.max` | `palette.colours` | **yes** |
 | `linePlot` | native (`linePlot()`) | `x.value` `y.value` `group.by` `facet.by` | `palette.colours` | — |
 | `dumbbellPlot` | native (`dumbbellPlot()`) | `x.value` `y.value` `colour.by` `facet.by` | `palette.colours` | — |
 | `piePlot` | native (`piePlot()`) | `labels` `values` | `slice.colors` | — |
@@ -73,7 +72,7 @@ groups fall back to the stock palette; the user can still edit every colour.
 |---|---|
 | `dittoViz_scatterPlot` | Data, Adjustments, Points, Colors, Facet, Annotations, Legend, Trajectory, Lines, Axes, Plotly, Extras |
 | `dittoViz_yPlot` | Data, Adjustments, Jitter, Box, Violin, Ridge, Stats, Facet, Annotations, Legend, Axes, Lines, Plotly |
-| `plotthis_BoxPlot`, `plotthis_ViolinPlot` | Data, Adjustments, Highlight, Facet, Stats, Legend, Axes, Lines, Plotly |
+| `plotthis_BoxPlot` | Data, Adjustments, Highlight, Facet, Stats, Legend, Axes, Lines, Plotly |
 | `plotthis_AreaPlot`, `plotthis_DotPlot`, `linePlot`, `dumbbellPlot` | Data, Facet, Aesthetics, Legend, Axes, Lines, Plotly |
 | `plotthis_DensityPlot`, `plotthis_Histogram` | Data, Facet, Aesthetics, Rug, Legend, Axes, Lines, Plotly |
 | `plotthis_BarPlot`, `plotthis_SplitBarPlot` | Data, Facet, Aesthetics, Adjustments, Legend, Axes, Lines, Plotly |
@@ -124,7 +123,7 @@ what `freqPlot()` needs — on a table without it every group collapses to a sin
 and the underlying function warns.
 
 Each `*App()` opens on a dataset chosen to suit it: scatter/line/area/pie/parallel →
-`example_sales`; yPlot/box/violin/density/histogram → `example_demographics`; bar and
+`example_sales`; yPlot/box/density/histogram → `example_demographics`; bar and
 split bar → `example_bar`; dot → `example_markers`; radar → `example_skills`; dumbbell →
 `example_school_earnings`; heatmap → `example_heatmap_matrix`; freqPlot →
 `example_composition`.
