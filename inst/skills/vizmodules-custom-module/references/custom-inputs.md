@@ -74,3 +74,46 @@ updateMultiDynamicInput(session, inputId, elements = NULL, clear = FALSE)
 A field may carry a `backend = "<name>"` tag, which hides it unless that model type is
 selected. You rarely write those by hand — `build_model_row_spec()` assembles them from
 the registered model backends.
+
+## Styling, if you write an input of your own
+
+Both widgets ship a stylesheet from `inst/src/` through an `htmlDependency()`, and **that
+stylesheet is injected into the host app's document**. There is no shadow DOM and no
+automatic scoping, so a rule written for your widget applies to the whole page. Every plot
+module renders a `multiColorPicker`, so these sheets arrive in any app that uses any
+module — which is how one unscoped selector came to break stock `selectInput()` dropdowns
+in apps that never touched the picker (#355).
+
+Anchor every selector on a class you invented:
+
+```css
+/* WRONG — .selectize-dropdown, .option and .optgroup-header are selectize's own,
+   so this restyles every dropdown on the page, DT's column filters included. */
+.selectize-dropdown .selectize-dropdown-content { display: flex; flex-direction: column; }
+
+/* RIGHT */
+.mc-palette-dropdown .selectize-dropdown-content { display: flex; flex-direction: column; }
+```
+
+The wrong version reads like "the content inside my dropdown", which is the trap. Judge by
+the **leftmost** class: if you did not invent it, the rule is not scoped.
+
+A dropdown parented to `<body>` (to dodge a clipping ancestor) cannot be reached by a
+`.my-widget .thing` selector — which is exactly why those rules were unscoped in the first
+place. Give it a marker of its own; `multiColorPicker` passes
+`dropdownClass: "selectize-dropdown mc-palette-dropdown"` to selectize, restating
+selectize's class because the option replaces the default wholesale.
+
+Also worth copying from these two:
+
+- Inspect the rendered DOM and confirm each selector matches. One picker rule targeted
+  `.option`, but its custom `render.option` emits `.mc-palette-option` — so it did nothing
+  for the picker and everything to everyone else.
+- Keep layout out of inline `style=`; it can only be overridden with `!important`. Pass
+  per-instance values as CSS custom properties.
+- Do not depend on the parent's padding (no Bootstrap negative-margin rows) — use `gap`.
+- `min-width: 0` on flex children, and let every row wrap: these land in sidebars of any
+  width.
+
+`tests/testthat/test-ui_utils.R` fails on any selector in any bundled or inline stylesheet
+that is not anchored to a package-owned prefix.

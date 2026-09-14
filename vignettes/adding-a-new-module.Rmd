@@ -52,6 +52,7 @@ change a convention it documents.
 - [ ] Cover the base plotting function with `testthat`; cover the module/app with `testServer` where feasible.
 - [ ] Note any `ggplotly` conversion quirks that change or drop functionality.
 - [ ] **Never use `eval(str2expression())` on raw user input.** Use `safe_eval_filter()`, `validate_expression()`, or `safe_resolve_adj_fxn()` instead (see [Sanitizing User-Provided Expressions] below).
+- [ ] If you write any CSS, anchor every selector on a class this package owns — a stylesheet goes into the host app's document unscoped (see [Styling and CSS Containment]).
 
 ## Naming & Organization
 
@@ -481,7 +482,7 @@ See the `plotthis_BoxPlotServer`, `plotthis_ViolinPlotServer`, or `dittoViz_yPlo
 - [ ] Verify namespacing: each module instance should have a unique `id` and independent state.
 - [ ] Keep dependencies minimal (prefer built-in or generated datasets).
 - [ ] Register the module in `.figure_builder_registry()` (`R/figureBuilder_module_app.R`) too. This is a second, separately-shaped registry and is the step most often forgotten.
-- [ ] If the module's output is not a plotly graph, attach a `vector_svg` attribute to the reactive its server returns so its panels appear in the Figure Builder's SVG export; `.draw_to_svg()` builds one from any grid or base drawing. See `ComplexHeatmap_HeatmapServer()`.
+- [ ] If the module's output is not a plotly graph, give it a `vector_svg` and a `raster_png` function of `(width, height, res)` so its panels appear in the Figure Builder's SVG export and its source download carries images; `draw_to_svg()` and `draw_to_png()` build them from any grid or base drawing. Put them on the summary list the server's reactive returns (the source download reads them there), and attach `vector_svg` to the reactive as an attribute as well (the Figure Builder's canvas export reads it there). See `ComplexHeatmap_HeatmapServer()`.
 
 ## Review Before Submitting
 
@@ -489,6 +490,7 @@ See the `plotthis_BoxPlotServer`, `plotthis_ViolinPlotServer`, or `dittoViz_yPlo
 - [ ] Run `devtools::check()` and ensure tests pass locally.
 - [ ] Confirm UI text/tooltips mention any missing or altered plot features.
 - [ ] Verify both module instances in the example app work independently (namespacing correct).
+- [ ] If you added CSS, render the module beside a stock `selectInput()`, `sidebarPanel()` and `DT::datatable()` and confirm none of them changed (see [Styling and CSS Containment]).
 
 ## Style Guide
 
@@ -588,6 +590,131 @@ The only exception is a one-off call in an `@examples` block or vignette where t
 - Avoid `sapply()` — use `vapply()` or `lapply()` with explicit types instead.
 - Do not edit `NAMESPACE` manually; always regenerate with `devtools::document()`.
 
+## Styling and CSS Containment
+
+**Every stylesheet a module loads is injected into the host app's document.** There is no
+shadow DOM and no automatic scoping: a rule you write for your widget applies to the whole
+page. Because each plot module pulls in a colour picker, attaching *any* module to a page
+brings the package's stylesheets with it — so a careless selector silently restyles an app
+that merely embedded one plot.
+
+This has bitten the package three times (#355), and every case was the same mistake:
+styling a class the package does not own.
+
+### Only ever style classes this package created
+
+Anchor every selector on a package-owned prefix — `.multi-color-picker`, `.mc-`, `.mdi-`,
+`.vizmodules-`, `.viz-`, `.pb-`. Never write a bare rule against a class that belongs to
+Bootstrap, Shiny, selectize, DT or any other library:
+
+```css
+/* WRONG — restyles every dropdown, well and tab strip in the host app */
+.selectize-dropdown .option { padding: 0 !important; }
+.well .btn { padding: 4px 10px; }
+.nav-tabs { flex-wrap: wrap; }
+
+/* RIGHT — reaches only markup this package rendered */
+.mc-palette-dropdown .option { padding: 0 !important; }
+.pb-app .well .btn { padding: 4px 10px; }
+.vizmodules-input-tabs > .nav-tabs { flex-wrap: wrap; }
+```
+
+The trap is that these rules *look* scoped. `.well .btn` reads like "the buttons in my
+well" — but `.well` is what `shiny::sidebarPanel()` renders, so it is every sidebar on the
+page. If a selector's leftmost class is not one you invented, it is not scoped.
+
+`tests/testthat/test-ui_utils.R` enforces this: it parses every selector in every bundled
+and inline stylesheet and fails on anything not anchored to a package prefix. Add your
+widget's prefix there if you introduce one.
+
+### A dropdown or popover parented to `<body>` needs its own marker class
+
+Anything that escapes its container to avoid clipping — selectize's
+`dropdownParent: "body"`, a tooltip, a popper — can no longer be reached by a
+`.my-widget .thing` selector, which is exactly why the leaking rules were written
+unscoped in the first place. Give the escaped element a class of its own instead:
+
+```js
+$(select).selectize({
+  dropdownParent: "body",
+  // Selectize replaces its default dropdownClass wholesale, so its own class
+  // has to be restated alongside ours.
+  dropdownClass: "selectize-dropdown mc-palette-dropdown",
+  ...
+});
+```
+
+### Check that the rule matches what you think it does
+
+`.selectize-dropdown .option` never matched the colour picker's own options at all — its
+custom `render.option` emits `.mc-palette-option`, and selectize does not add `.option` to
+that. The rule's *only* effect was on other people's dropdowns: a selector that misses
+everything you own and hits everything you don't. Open the widget, inspect the element,
+and confirm the class you are targeting is actually on it.
+
+### Keep layout out of inline styles
+
+An inline `style=` attribute can only be overridden with `!important`, which makes a host
+app fight your widget rather than theme it. Put layout in a stylesheet and pass only the
+values that vary per instance, as CSS custom properties:
+
+```r
+# organize_inputs() emits just the column count; the rest lives in vizModules.css
+div(
+    class = "vizmodules-input-grid",
+    style = paste0("--viz-input-columns: ", columns, ";"),
+    lapply(cells, function(x) div(class = "vizmodules-input-cell", x))
+)
+```
+
+### Do not assume anything about the parent
+
+The control grid used Bootstrap's negative-margin row idiom
+(`margin-left: -15px` on the row, matching padding on each cell), which assumes a parent
+with at least that much horizontal padding to absorb it. Dropped into a `bslib::sidebar()`
+with less, the grid overhung on both sides and the sidebar grew a horizontal scrollbar.
+Use `gap` instead — it needs nothing from the parent.
+
+Give flex children `min-width: 0` as well. Without it a long select or label refuses to
+shrink below its intrinsic width and pushes the container wider — the same overflow by a
+different route.
+
+### Shipping a stylesheet
+
+Put it in `inst/src/`, serve it through an `htmlDependency()`, and attach it to the UI that
+needs it rather than to the app as a whole:
+
+```r
+.viz_modules_dependency <- function() {
+    htmlDependency(
+        name = "viz-modules",
+        version = as.character(utils::packageVersion("VizModules")),
+        src = "src", package = "VizModules",
+        stylesheet = "vizModules.css"
+    )
+}
+```
+
+Attaching it with `htmltools::attachDependencies(ui, dep, append = TRUE)` means the styles
+travel with the markup — including through a runtime `insertUI()`, which the Figure Builder
+relies on when it injects a panel's controls.
+
+### Verifying containment
+
+Automated checks catch an unscoped *selector*, but not whether your rule actually changed
+anything. To see the real effect, load the widget beside a stock `selectInput()`,
+`sidebarPanel()` and `DT::datatable()`, then disable just your stylesheet in the browser
+and re-measure:
+
+```js
+document.querySelectorAll('link[rel=stylesheet]').forEach(function (l) {
+  if (l.href.indexOf('yourFile.css') !== -1) { l.disabled = true; }
+});
+```
+
+If a computed style on the host's own controls changes, your CSS is leaking. If nothing in
+your widget changes, your rule was never matching in the first place.
+
 ## Sanitizing User-Provided Expressions
 
 **Never use `eval(str2expression())` or `eval(parse())` on raw user input.**
@@ -640,15 +767,29 @@ Returns the function, or `NULL` if the name is empty or not in the allowed list.
 
 ### What counts as "allowed"?
 
-All three helpers share the same whitelist of safe AST nodes:
+`safe_eval_filter()` and `validate_expression()` share one whitelist of safe AST nodes:
 
 - **Comparisons:** `<`, `>`, `<=`, `>=`, `==`, `!=`
-- **Logical operators:** `&`, `&&`, `|`, `||`, `!`
+- **Logical operators:** `&`, `&&`, `|`, `||`, `!`, `xor()`
 - **Utilities:** `%in%`, `c()`, `is.na()`, `is.null()`
-- **Arithmetic:** `-`, `+`, `*`, `/`, `:`, `%%`
+- **Arithmetic:** `-`, `+`, `*`, `/`, `:`, `%%`, `abs()`, `round()`
+- **Strings and patterns:** `grepl()`, `startsWith()`, `endsWith()`, `substr()`,
+  `nchar()`, `toupper()`, `tolower()`, `trimws()`
 - **Grouping:** `()`
 - **Column names** from the data
 - **Literals:** numbers, strings, `TRUE`, `FALSE`, `NA`, `NULL`, `Inf`, `NaN`
 
 Anything outside this list (including function calls like `system()`, `file.remove()`,
-`library()`, etc.) is rejected and a warning is issued.
+`library()`, etc.) is rejected and a warning is issued. So is a namespaced or extracted
+call such as `base::log(x)`, which would otherwise slip past a name-based check.
+
+The expression must also be a **single statement**: anything after a `;` or a newline is
+rejected rather than silently ignored.
+
+`safe_resolve_adj_fxn()` is the exception — it does not walk an AST at all. It matches the
+whole input against its own short list of numeric transforms (`log2`, `log`, `log10`,
+`neg_log10`, `log1p`, `as.factor`, `abs`, `sqrt`) and resolves it with `match.fun()`.
+
+Model formulas (`.safe_build_model()`, behind the custom fit lines) reuse the same walker
+with a formula-specific vocabulary: `~`, `+`, `-`, `*`, `/`, `^`, `(`, `:`, `I()`, and the
+transforms `log()`, `log2()`, `log10()`, `sqrt()`, `exp()`, `poly()`.

@@ -114,7 +114,7 @@ reactive-defaults setup (the UI must be built inside `renderUI()`) and its seman
 - **`dataFilterUI(id)` / `dataFilterServer(id, data, factor.char.cols, page.length, col.visibility, hide.columns, filter.max.options)`** — a DT table whose filtered rows come back as a reactive you feed straight to one or more plot modules.
 - **`figureBuilderUI(id)` / `figureBuilderServer(id, data_list, module_registry)`** — the multi-panel figure builder, embeddable like any module. `figureBuilderApp()` launches it standalone.
 - **Stats tab** — `dittoViz_yPlot`, `plotthis_BoxPlot`, `plotthis_ViolinPlot`, and `dittoViz_freqPlot` only. Pre-fill it through `defaults` with the `stats.enabled` / `stat.*` keys; see `references/stats-tab.md`.
-- **Source-data download** — `collect_source_data()` + `create_source_download_handler()`. Do not hand-roll `write.csv()`/`zip()`; see `references/source-data-export.md`.
+- **Source-data download** — `collect_source_data()` + `create_source_download_handler()`. Bundles the interactive HTML, an SVG and PNG of the plot, and the data/stats/inputs as CSVs. Do not hand-roll `write.csv()`/`zip()`; see `references/source-data-export.md`.
 
 ## Traps that cost real time
 
@@ -122,7 +122,7 @@ Every one of these was hit by an agent building an app against this package. Non
 them errors loudly; each looks like the module misbehaving.
 
 - **A hand-built app needs `shinyjs::useShinyjs()` in its UI.** `hide.inputs`/`hide.tabs` go through `runjs()`. Without it the app renders fine and the hiding silently does nothing. `createModuleApp()` includes it for you; your own `fluidPage()` does not.
-- **`create_source_download_handler()` needs pandoc.** It calls `saveWidget(selfcontained = TRUE)`; with no pandoc on `PATH` the download returns HTTP 500. This is package-wide — the modules' own Source Download button fails identically. RStudio bundles pandoc; a bare server does not.
+- **`create_source_download_handler()` wants pandoc for the HTML.** It calls `saveWidget(selfcontained = TRUE)`; with no pandoc on `PATH` the `_plot.html` is skipped with a warning and the rest of the archive — the CSVs, the SVG and the PNG, none of which need pandoc — still downloads. RStudio bundles pandoc; a bare server does not. (Before 0.5.0.9000 this failed the whole download with HTTP 500.)
 - **`stats.enabled = TRUE` can still draw nothing.** `stat.hide.ns` defaults to `TRUE`, so if every comparison is non-significant the tests run and no brackets appear. That looks broken. Set `stat.hide.ns = FALSE` while checking your wiring.
 - **`main` is not a real key.** No module exposes a plot title. `defaults = list(main = ...)` is silently ignored — see `references/defaults-and-hiding.md`.
 - **An unknown `defaults` key never errors.** `get_default()` falls back. If a default "doesn't work", suspect the key name first.

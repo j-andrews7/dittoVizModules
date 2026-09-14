@@ -296,6 +296,12 @@
             )
         })
 
+        # The archive also carries an SVG and a PNG of the plot, photographed in
+        # the browser off the live plotly graph. A module whose output is NOT a
+        # plotly graph has nothing to photograph and must draw itself instead:
+        # add `vector_svg = function(width, height, res) ...` and
+        # `raster_png = ...` to the list above, built with draw_to_svg() and
+        # draw_to_png(). See ComplexHeatmap_HeatmapServer().
         output$download.source <- create_source_download_handler(
             data_list = plot_source_reactive,
             filename_base = "<OUTPUTID>_source"
